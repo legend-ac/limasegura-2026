@@ -84,19 +84,19 @@ const TOUR_STEPS: TourStep[] = [
   },
 ];
 
-export const GuidedTour: React.FC = () => {
+export const GuidedTour: React.FC<{ forceShow?: boolean; onClose?: () => void }> = ({ forceShow, onClose }) => {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
   const [device, setDevice] = useState<DeviceType>('desktop');
 
   useEffect(() => {
-    const completed = localStorage.getItem(TOUR_STORAGE_KEY);
-    if (!completed) {
-      // Show tour after a short delay to let the app load
-      const timer = setTimeout(() => setVisible(true), 1200);
-      return () => clearTimeout(timer);
+    // Auto-show only if forceShow is true (triggered by user clicking help button)
+    // Do NOT auto-block the app on startup
+    if (forceShow) {
+      setVisible(true);
+      setStep(0);
     }
-  }, []);
+  }, [forceShow]);
 
   useEffect(() => {
     setDevice(detectDevice());
@@ -108,7 +108,8 @@ export const GuidedTour: React.FC = () => {
   const handleComplete = useCallback(() => {
     localStorage.setItem(TOUR_STORAGE_KEY, 'true');
     setVisible(false);
-  }, []);
+    onClose?.();
+  }, [onClose]);
 
   const handleNext = () => {
     if (step < TOUR_STEPS.length - 1) {

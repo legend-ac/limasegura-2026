@@ -11,8 +11,8 @@ import {
   MapPin, Navigation, Route, Shield, Star, X,
   RefreshCw, Crosshair, AlertTriangle, Clock, Ruler,
   ShieldCheck, Bookmark, RotateCcw, Check, Info,
-  ChevronDown, ChevronUp, TrendingUp, Sun, Moon, ArrowUpDown,
-  Footprints, Flame, Timer, PersonStanding, Sparkles
+  ChevronDown, ChevronUp, Sun, Moon, ArrowUpDown,
+  Footprints, Flame, Timer, PersonStanding, HelpCircle
 } from 'lucide-react';
 
 const FAV_KEY = 'ls2026_favorites';
@@ -79,6 +79,7 @@ export default function App() {
   const [showDirs,     setShowDirs]    = useState(false);
   const [walkingMode,  setWalkingMode] = useState(false);
   const [walkPace,     setWalkPace]    = useState<WalkPace>('normal');
+  const [showTour,     setShowTour]    = useState(false);
 
   const [saved, setSaved] = useState<SavedRoute[]>(() => {
     try { return JSON.parse(localStorage.getItem(FAV_KEY) || 'null') || []; }
@@ -325,6 +326,15 @@ export default function App() {
             title={isDark ? 'Cambiar a modo día ☀️' : 'Cambiar a modo noche 🌙'}
           >
             {isDark ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
+          {/* Ayuda / Tour */}
+          <button
+            className="ls-icon-btn"
+            onClick={() => setShowTour(true)}
+            title="Ver guía de uso"
+          >
+            <HelpCircle size={16} />
           </button>
 
           {/* Reiniciar — visible solo cuando hay puntos seleccionados */}
@@ -687,7 +697,10 @@ export default function App() {
           onClearAll={() => setSaved([])}
         />
 
-        <GuidedTour />
+        <GuidedTour
+          forceShow={showTour}
+          onClose={() => setShowTour(false)}
+        />
       </div>
     );
 }
