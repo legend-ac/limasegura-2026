@@ -1,0 +1,1392 @@
+/* ══════════════════════════════════════════════════════════════
+   LimaSegura 2026 — CSS Completo
+   Mobile-first · 3 breakpoints: móvil / tablet / escritorio
+   ══════════════════════════════════════════════════════════════ */
+
+@import "tailwindcss";
+
+/* ── Tokens — MODO NOCHE (por defecto) ──────────────────────── */
+:root {
+  --bg:         #0D1117;
+  --bg-2:       #161B22;
+  --bg-3:       #1C2333;
+  --surface:    #1F2937;
+  --surface-2:  #263045;
+  --border:     rgba(255,255,255,0.08);
+  --border-2:   rgba(255,255,255,0.14);
+  --text-1:     #F0F6FC;
+  --text-2:     #8B949E;
+  --text-3:     #4E6080;
+  --green:      #2DD4A0;
+  --green-dim:  rgba(45,212,160,0.12);
+  --red:        #F85149;
+  --red-dim:    rgba(248,81,73,0.12);
+  --blue:       #58A6FF;
+  --amber:      #F59E0B;
+  --purple:     #A78BFA;
+  --radius:     12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
+  --shadow:     0 4px 24px rgba(0,0,0,0.4);
+  --shadow-lg:  0 8px 40px rgba(0,0,0,0.55);
+  --font:       'Inter', system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', monospace;
+  --header-h:   56px;
+  --tile-filter: invert(100%) hue-rotate(180deg) brightness(0.88) contrast(1.1) saturate(0.35);
+}
+
+/* ── Tokens — MODO DÍA ──────────────────────────────────────── */
+html.light-mode {
+  --bg:         #F6F8FA;
+  --bg-2:       #FFFFFF;
+  --bg-3:       #EEF1F5;
+  --surface:    #E8ECF2;
+  --surface-2:  #DDE3EC;
+  --border:     rgba(0,0,0,0.08);
+  --border-2:   rgba(0,0,0,0.14);
+  --text-1:     #0D1117;
+  --text-2:     #57606A;
+  --text-3:     #8C9AB0;
+  --green:      #1B8A6B;
+  --green-dim:  rgba(27,138,107,0.10);
+  --red:        #CF222E;
+  --red-dim:    rgba(207,34,46,0.10);
+  --blue:       #0969DA;
+  --amber:      #9A6700;
+  --purple:     #6639BA;
+  --shadow:     0 4px 24px rgba(0,0,0,0.12);
+  --shadow-lg:  0 8px 40px rgba(0,0,0,0.18);
+  /* En modo día los tiles de OSM ya son claros, NO invertir */
+  --tile-filter: none;
+}
+
+/* ── Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { cursor: pointer; font-family: inherit; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ── App shell ───────────────────────────────────────────────── */
+.ls-app {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   HEADER
+   ══════════════════════════════════════════════════════════════ */
+.ls-header {
+  height: var(--header-h);
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  position: relative;
+  z-index: 200;
+  flex-shrink: 0;
+}
+
+.ls-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.ls-logo {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  background: var(--green-dim);
+  border: 1px solid rgba(45,212,160,0.3);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--green);
+}
+
+.ls-brand-name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.02em;
+}
+
+.ls-brand-year {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid rgba(45,212,160,0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 6px;
+  font-family: var(--font-mono);
+}
+
+/* Header center route summary */
+.ls-header-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 0.5rem;
+}
+.ls-route-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 4px 12px;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.6875rem;
+}
+.ls-rs-origin { color: var(--green); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+.ls-rs-dest   { color: var(--red);   font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
+
+.ls-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.ls-icon-btn {
+  width: 34px; height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-2);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+  position: relative;
+}
+.ls-icon-btn:hover { background: var(--surface); color: var(--text-1); border-color: var(--border-2); }
+.ls-icon-btn.active { background: var(--green-dim); border-color: rgba(45,212,160,0.3); color: var(--green); }
+.ls-icon-btn.danger:hover { background: var(--red-dim); border-color: rgba(248,81,73,0.3); color: var(--red); }
+
+.ls-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  background: var(--green);
+  color: #000;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.ls-hamburger {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  color: var(--text-1);
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.ls-hamburger:hover { background: var(--surface); border-color: var(--border-2); }
+
+/* ── Dropdown menu ───────────────────────────────────────────── */
+.ls-menu {
+  position: absolute;
+  top: calc(var(--header-h) + 6px);
+  right: 1rem;
+  background: var(--bg-2);
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  z-index: 300;
+  overflow: hidden;
+  min-width: 220px;
+}
+
+.ls-menu button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-1);
+  font-size: 0.875rem;
+  text-align: left;
+  transition: background 0.1s;
+  border-bottom: 1px solid var(--border);
+}
+.ls-menu button:last-child { border-bottom: none; }
+.ls-menu button:hover { background: var(--surface); }
+.ls-menu button svg { color: var(--text-2); flex-shrink: 0; }
+
+/* ══════════════════════════════════════════════════════════════
+   MAIN LAYOUT — Desktop: map left/big, panel right
+   ══════════════════════════════════════════════════════════════ */
+.ls-main {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Map area ────────────────────────────────────────────────── */
+.ls-map-area {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Right panel ─────────────────────────────────────────────── */
+.ls-panel {
+  background: var(--bg-2);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ls-panel-toggle { display: none; } /* hidden on desktop */
+
+.ls-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-2) transparent;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STEP CARDS
+   ══════════════════════════════════════════════════════════════ */
+.ls-step {
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  transition: border-color 0.2s;
+}
+.ls-step.active { border-color: var(--border-2); }
+
+.ls-step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin-bottom: 0.625rem;
+}
+
+.ls-step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8125rem; font-weight: 800;
+  flex-shrink: 0;
+}
+.ls-step-num.origin { background: var(--green-dim); color: var(--green); border: 1px solid rgba(45,212,160,0.3); }
+.ls-step-num.dest   { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(248,81,73,0.3);  }
+
+.ls-step-title {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ls-step-value {
+  font-size: 0.875rem; font-weight: 600; margin-top: 2px;
+}
+.ls-step-value.origin { color: var(--green); }
+.ls-step-value.dest   { color: var(--red); }
+.ls-step-hint { font-size: 0.8125rem; color: var(--text-2); margin-top: 2px; }
+
+.ls-clear-btn {
+  margin-left: auto;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text-3);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+.ls-clear-btn:hover { background: var(--red-dim); color: var(--red); border-color: rgba(248,81,73,0.3); }
+
+.ls-step-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ls-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border-2);
+  background: var(--surface);
+  color: var(--text-1);
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.ls-action-btn:hover:not(:disabled) { background: var(--surface-2); border-color: var(--blue); color: var(--blue); }
+.ls-action-btn.selecting { background: var(--green-dim); border-color: var(--green); color: var(--green); }
+.ls-action-btn.gps { flex: 0 0 auto; width: 60px; }
+.ls-action-btn.gps:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+
+/* ── Algorithm picker ────────────────────────────────────────── */
+.ls-alg-picker { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.ls-section-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ls-alg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.ls-alg-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-3);
+  text-align: left;
+  transition: all 0.15s;
+}
+.ls-alg-btn:hover { border-color: var(--border-2); background: var(--surface); }
+.ls-alg-btn.selected {
+  border-color: var(--alg-color, var(--green));
+  background: color-mix(in srgb, var(--alg-color, var(--green)) 12%, transparent);
+}
+
+.ls-alg-name {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-1);
+  .ls-alg-btn.selected & { color: var(--alg-color, var(--green)); }
+}
+.ls-alg-btn.selected .ls-alg-name { color: var(--alg-color, var(--green)); }
+
+.ls-alg-desc {
+  font-size: 0.625rem;
+  color: var(--text-3);
+  line-height: 1.3;
+}
+
+/* ── Calculate button ────────────────────────────────────────── */
+.ls-calc-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 46px;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--green);
+  color: #000;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  transition: all 0.15s;
+  box-shadow: 0 4px 16px rgba(45,212,160,0.3);
+}
+.ls-calc-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(45,212,160,0.45);
+}
+.ls-calc-btn:active:not(:disabled) { transform: translateY(0); }
+
+/* ── Error ───────────────────────────────────────────────────── */
+.ls-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--red-dim);
+  border: 1px solid rgba(248,81,73,0.25);
+  border-radius: 8px;
+  color: var(--red);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* ── Results ─────────────────────────────────────────────────── */
+.ls-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+}
+
+.ls-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ls-results-title { font-weight: 700; font-size: 0.875rem; color: var(--text-1); }
+.ls-results-alg {
+  font-size: 0.6875rem;
+  color: var(--green);
+  background: var(--green-dim);
+  border: 1px solid rgba(45,212,160,0.2);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-family: var(--font-mono);
+}
+
+.ls-score-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.ls-score-circle {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  border: 3px solid var(--sc, var(--green));
+  background: color-mix(in srgb, var(--sc, var(--green)) 10%, transparent);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.ls-score-num {
+  font-size: 1.125rem; font-weight: 800;
+  color: var(--sc, var(--green));
+  line-height: 1;
+}
+.ls-score-label { font-size: 0.5625rem; color: var(--text-3); text-transform: uppercase; margin-top: 2px; }
+
+.ls-stats { display: flex; flex-direction: column; gap: 0.375rem; flex: 1; }
+.ls-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--text-2);
+}
+.ls-stat svg { color: var(--text-3); flex-shrink: 0; }
+.ls-stat.good { color: var(--green); }
+.ls-stat.good svg { color: var(--green); }
+
+/* ── Directions ──────────────────────────────────────────────── */
+.ls-directions { display: flex; flex-direction: column; gap: 0.25rem; }
+.ls-directions-label { font-size: 0.6875rem; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+
+.ls-direction-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 0.75rem;
+}
+.ls-dir-num {
+  width: 18px; height: 18px; border-radius: 50%;
+  background: var(--bg-3); border: 1px solid var(--border-2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.5625rem; font-weight: 800;
+  color: var(--text-2); flex-shrink: 0;
+}
+.ls-dir-text { flex: 1; color: var(--text-2); line-height: 1.4; }
+.ls-dir-dist { color: var(--text-3); font-size: 0.6875rem; white-space: nowrap; font-family: var(--font-mono); }
+.ls-dir-more { font-size: 0.75rem; color: var(--text-3); text-align: center; padding: 0.25rem; }
+
+/* ── Save button ─────────────────────────────────────────────── */
+.ls-save-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--amber);
+  background: rgba(245,158,11,0.1);
+  color: var(--amber);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition: all 0.15s;
+}
+.ls-save-btn:hover:not(:disabled) { background: rgba(245,158,11,0.2); }
+.ls-save-btn.saved { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+
+/* ── Animation ───────────────────────────────────────────────── */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════════════════════════
+   LEAFLET OVERRIDES
+   ══════════════════════════════════════════════════════════════ */
+.leaflet-container {
+  background: var(--bg-3) !important;
+  font-family: var(--font) !important;
+}
+
+/* Filtro de mapa — usa variable para noche/día automático */
+.leaflet-tile-pane {
+  filter: var(--tile-filter);
+}
+
+/* Keep markers and overlays un-inverted */
+.leaflet-overlay-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane,
+.leaflet-tooltip-pane,
+.leaflet-shadow-pane {
+  filter: none !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(13,17,23,0.8) !important;
+  color: var(--text-3) !important;
+  font-size: 10px !important;
+  border-radius: 4px 0 0 0 !important;
+}
+.leaflet-control-attribution a { color: var(--blue) !important; }
+
+.leaflet-control-zoom a {
+  background: var(--bg-2) !important;
+  color: var(--text-1) !important;
+  border-color: var(--border-2) !important;
+}
+.leaflet-control-zoom a:hover { background: var(--surface) !important; }
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-2) !important;
+  color: var(--text-1) !important;
+  border: 1px solid var(--border-2) !important;
+  box-shadow: var(--shadow) !important;
+  border-radius: var(--radius) !important;
+}
+.leaflet-popup-tip { background: var(--bg-2) !important; }
+.leaflet-popup-content { margin: 10px 14px !important; font-size: 13px !important; }
+
+.leaflet-tooltip {
+  background: var(--bg-2) !important;
+  border: 1px solid var(--border-2) !important;
+  color: var(--text-1) !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  box-shadow: var(--shadow) !important;
+}
+.leaflet-tooltip::before { display: none !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   PROGRESS BAR (for GuidedTour)
+   ══════════════════════════════════════════════════════════════ */
+.progress-track {
+  height: 4px; border-radius: 99px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--green), var(--blue));
+}
+
+/* btn helpers for GuidedTour */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; height: 36px; padding: 0 14px;
+  border-radius: 8px; border: 1px solid var(--border-2);
+  font-size: 0.8125rem; font-weight: 600;
+  background: var(--surface); color: var(--text-1);
+  transition: all 0.15s; cursor: pointer;
+  font-family: var(--font);
+}
+.btn:hover { background: var(--surface-2); }
+.btn-sm { height: 30px; padding: 0 10px; font-size: 0.75rem; }
+.btn-primary { background: var(--green); color: #000; border-color: var(--green); }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-secondary { background: var(--surface-2); }
+.btn-ghost { background: none; border-color: transparent; color: var(--text-2); }
+.btn-ghost:hover { background: var(--surface); color: var(--text-1); }
+
+/* Token aliases for GuidedTour */
+:root {
+  --c-bg: var(--bg);
+  --c-surface: var(--bg-2);
+  --c-surface-2: var(--bg-3);
+  --c-surface-3: var(--surface);
+  --c-border: var(--border);
+  --c-border-md: var(--border-2);
+  --c-text-1: var(--text-1);
+  --c-text-2: var(--text-2);
+  --c-text-3: var(--text-3);
+  --c-green: var(--green);
+  --c-green-dim: var(--green-dim);
+  --c-red: var(--red);
+  --c-blue: var(--blue);
+  --c-amber: var(--amber);
+  --c-purple: var(--purple);
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
+  --r-2xl: 20px;
+  --shadow-lg: var(--shadow-lg);
+  --font-sans: var(--font);
+  --font-head: var(--font);
+  --font-mono: var(--font-mono);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — TABLET (640px–1023px)
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .ls-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    overflow: hidden;
+  }
+
+  .ls-map-area {
+    /* Map fills the top */
+    min-height: 0;
+  }
+
+  .ls-panel {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    max-height: 55svh;
+    overflow-y: auto;
+  }
+
+  .ls-panel-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    width: 100%;
+    height: 36px;
+    background: var(--bg-2);
+    border: none;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .ls-panel-body {
+    padding: 0.75rem;
+  }
+
+  /* Two-column grid for steps on tablet */
+  .ls-panel-body > .ls-step {
+    /* single column on tablet too for clarity */
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE (<640px)
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 639px) {
+  :root { --header-h: 50px; }
+
+  .ls-brand-name { font-size: 0.9375rem; }
+  .ls-brand-year { display: none; }
+
+  .ls-main {
+    grid-template-rows: 1fr auto;
+  }
+
+  .ls-panel {
+    max-height: 58svh;
+    overflow-y: auto;
+  }
+
+  .ls-panel-body {
+    padding: 0.625rem;
+    gap: 0.5rem;
+  }
+
+  .ls-step { padding: 0.75rem; }
+
+  .ls-alg-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.375rem;
+  }
+
+  .ls-alg-btn { padding: 0.5rem; }
+  .ls-alg-name { font-size: 0.75rem; }
+  .ls-alg-desc { display: none; }
+
+  .ls-calc-btn { height: 42px; font-size: 0.875rem; }
+
+  .ls-score-circle { width: 60px; height: 60px; }
+  .ls-score-num { font-size: 1rem; }
+
+  .ls-results { padding: 0.75rem; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ADDITIONAL CLASSES — Menu, Sections, Directions, Info
+   ══════════════════════════════════════════════════════════════ */
+
+/* Menu backdrop */
+.ls-menu-backdrop {
+  position: fixed; inset: 0; z-index: 290;
+  background: rgba(0,0,0,0.25);
+}
+.ls-menu-title {
+  padding: 0.625rem 1rem 0.375rem;
+  font-size: 0.625rem; font-weight: 800;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.07em;
+}
+
+/* Section */
+.ls-section { display: flex; flex-direction: column; gap: 0.5rem; }
+.ls-section-label {
+  display: flex; align-items: center; gap: 0.375rem;
+  font-size: 0.6875rem; font-weight: 700;
+  color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em;
+}
+.ls-section-label svg { color: var(--text-3); }
+
+/* Algorithm button dot */
+.ls-alg-btn {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.ls-alg-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--alg-color, var(--green));
+  flex-shrink: 0; margin-top: 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+.ls-alg-btn.selected .ls-alg-dot { opacity: 1; }
+.ls-alg-btn > div { display: flex; flex-direction: column; gap: 2px; }
+.ls-alg-btn.selected .ls-alg-name { color: var(--alg-color, var(--green)); }
+
+/* Info banner */
+.ls-info {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(88,166,255,0.08);
+  border: 1px solid rgba(88,166,255,0.2);
+  border-radius: 8px;
+  color: var(--blue); font-size: 0.75rem; line-height: 1.5;
+}
+
+/* Warning row inside results */
+.ls-warning-row {
+  display: flex; align-items: flex-start; gap: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 8px;
+  color: var(--amber); font-size: 0.75rem; line-height: 1.5;
+}
+.ls-warning-row svg { flex-shrink: 0; margin-top: 1px; }
+
+/* Step disabled */
+.ls-step.disabled { opacity: 0.5; pointer-events: none; }
+.ls-step-info { flex: 1; min-width: 0; }
+
+/* Results alg badge */
+.ls-results-alg-badge {
+  font-size: 0.6875rem; font-weight: 700;
+  color: var(--ac, var(--green));
+  background: color-mix(in srgb, var(--ac, var(--green)) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ac, var(--green)) 30%, transparent);
+  border-radius: 4px; padding: 2px 7px;
+  font-family: var(--font-mono);
+}
+
+/* Stat muted */
+.ls-stat.muted { color: var(--text-3); }
+.ls-stat.muted svg { color: var(--text-3); }
+
+/* Directions section */
+.ls-dirs-section { display: flex; flex-direction: column; gap: 0.375rem; }
+.ls-dirs-toggle {
+  display: flex; align-items: center; gap: 0.375rem;
+  width: 100%; padding: 0.5rem 0.625rem;
+  background: var(--surface); border: 1px solid var(--border-2);
+  border-radius: 8px; color: var(--text-2);
+  font-size: 0.75rem; font-weight: 600;
+  transition: all 0.15s;
+}
+.ls-dirs-toggle:hover { background: var(--surface-2); color: var(--text-1); }
+.ls-dirs-toggle svg:last-child { margin-left: auto; }
+
+.ls-dirs-list {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  max-height: 200px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: var(--border-2) transparent;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODO CAMINATA — estilos globales
+   ══════════════════════════════════════════════════════════════ */
+
+/* Botón de header cuando el modo caminata está activo */
+.ls-icon-btn.walk-active {
+  background: rgba(251,191,36,0.12);
+  border-color: rgba(251,191,36,0.4);
+  color: #FBBF24;
+}
+.ls-icon-btn.walk-active:hover {
+  background: rgba(251,191,36,0.2);
+  color: #F59E0B;
+}
+
+/* Banner informativo dentro del panel */
+.ls-walk-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 8px;
+  color: #FBBF24;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.ls-walk-banner svg { flex-shrink: 0; }
+
+/* Tarjeta principal de estadísticas de caminata */
+.ls-walk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  background: var(--surface);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+/* Cabecera de la tarjeta */
+.ls-walk-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #FBBF24;
+}
+
+/* Fila de selección de ritmo */
+.ls-walk-pace-row {
+  display: flex;
+  gap: 0.375rem;
+}
+
+.ls-walk-pace-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.5rem 0.25rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border-2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-2);
+}
+.ls-walk-pace-btn:hover {
+  background: var(--surface-2);
+  border-color: rgba(251,191,36,0.3);
+  color: var(--text-1);
+}
+.ls-walk-pace-btn.active {
+  background: rgba(251,191,36,0.1);
+  border-color: #FBBF24;
+  color: #FBBF24;
+}
+.ls-walk-pace-icon  { font-size: 1rem; line-height: 1; }
+.ls-walk-pace-label { font-size: 0.7rem; font-weight: 700; }
+.ls-walk-pace-speed { font-size: 0.6rem; color: inherit; opacity: 0.75; font-family: var(--font-mono); }
+
+/* Cuadrícula de métricas 2 columnas */
+.ls-walk-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.ls-walk-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 0.625rem;
+}
+/* Métrica que ocupa el ancho completo */
+.ls-walk-stat.full {
+  grid-column: 1 / -1;
+}
+.ls-walk-stat svg {
+  color: #FBBF24;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.ls-walk-stat > div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.ls-walk-stat-val {
+  font-size: 0.875rem;
+  font-weight: 800;
+  color: var(--text-1);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+.ls-walk-stat-lbl {
+  font-size: 0.6rem;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Aviso de zona de riesgo en modo caminata */
+.ls-walk-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.375rem;
+  padding: 0.5rem 0.625rem;
+  background: rgba(248,81,73,0.07);
+  border: 1px solid rgba(248,81,73,0.2);
+  border-radius: 7px;
+  font-size: 0.7rem;
+  color: var(--red);
+  line-height: 1.4;
+}
+.ls-walk-warning svg { flex-shrink: 0; margin-top: 1px; }
+
+/* ══════════════════════════════════════════════════════════════
+   CRITERIO ÚNICO — A* CON FACTOR DE AGLOMERACIÓN
+   ══════════════════════════════════════════════════════════════ */
+.ls-criterion-card {
+  background: var(--bg-2);
+  border: 1px solid rgba(45, 212, 160, 0.3);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(145deg, rgba(45, 212, 160, 0.05) 0%, var(--bg-2) 100%);
+}
+
+.ls-criterion-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ls-criterion-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: rgba(45, 212, 160, 0.15);
+  border: 1px solid rgba(45, 212, 160, 0.4);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ls-criterion-texts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ls-criterion-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.ls-criterion-sub {
+  font-size: 0.7rem;
+  color: var(--green);
+  font-weight: 500;
+}
+
+.ls-compare-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: var(--text-2);
+  transition: all 0.15s ease;
+}
+
+.ls-compare-toggle:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+  border-color: var(--border-bright);
+}
+
+.ls-compare-toggle input[type="checkbox"] {
+  accent-color: var(--green);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   BANNER FLOTANTE DE SELECCIÓN EN MAPA
+   ══════════════════════════════════════════════════════════════ */
+.ls-map-selection-banner {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-2);
+  color: var(--text-1);
+  padding: 8px 16px;
+  border-radius: 99px;
+  border: 1px solid var(--green);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: auto;
+  animation: bannerSlide 0.2s ease-out;
+}
+.ls-map-selection-banner svg { color: var(--green); flex-shrink: 0; }
+.ls-map-selection-banner button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text-2);
+  border-radius: 99px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 0.15s;
+}
+.ls-map-selection-banner button:hover {
+  background: var(--surface-3);
+  color: var(--text-1);
+}
+
+@keyframes bannerSlide {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* Swap row */
+.ls-swap-row {
+  display: flex;
+  justify-content: center;
+  margin: -0.25rem 0;
+  position: relative;
+  z-index: 2;
+}
+.ls-swap-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border-2);
+  border-radius: 99px;
+  padding: 4px 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ls-swap-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+  border-color: var(--border-3);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — TABLET (640px–1023px)
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 1023px) {
+  .ls-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+    height: calc(100svh - 56px);
+  }
+  .ls-panel {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    height: auto;
+    max-height: 48vh;
+  }
+  .ls-panel-body { padding: 0.75rem; gap: 0.625rem; }
+  .ls-header-center { display: none; }
+  .ls-panel-toggle { display: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — MÓVIL (< 640px)
+   Diseño estilo Google Maps:
+     • Header compacto de 48px con logo y accesos directos
+     • Mapa interactivo en área principal
+     • Panel inferior tipo Bottom Sheet deslizable y colapsable
+     • Selector de algoritmos en cuadrícula 2x2 (sin desbordes ni texto cortado)
+     • Botón de calcular prominente y visible
+   ══════════════════════════════════════════════════════════════ */
+@media (max-width: 639px) {
+
+  /* ── Header móvil ────────────────────────────────────────── */
+  .ls-header {
+    height: 48px;
+    padding: 0 0.75rem;
+  }
+  .ls-header-brand { gap: 0.5rem; }
+  .ls-logo { width: 30px; height: 30px; border-radius: 8px; }
+  .ls-brand-name { font-size: 0.95rem; }
+  .ls-brand-year { display: none; }
+  .ls-header-center { display: none; }
+  .ls-header-actions { gap: 0.25rem; }
+  .ls-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+
+  /* ── Layout principal móvil: Mapa de fondo + Panel inferior ── */
+  .ls-main {
+    display: block;
+    position: relative;
+    overflow: hidden;
+    height: calc(100svh - 48px);
+  }
+
+  /* Mapa: ocupa el 100% del contenedor */
+  .ls-map-area {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  /* ── Panel Bottom Sheet ──────────────────────────────────── */
+  .ls-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 500;
+    background: var(--bg-2);
+    border-left: none;
+    border-top: 1px solid var(--border-2);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -6px 32px rgba(0,0,0,0.45);
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Handle táctil en la parte superior */
+  .ls-panel::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: var(--border-2);
+    border-radius: 99px;
+    margin: 8px auto 2px;
+    flex-shrink: 0;
+  }
+
+  /* Botón toggle de expansión/colapso */
+  .ls-panel-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding: 0.375rem 1rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-2);
+    background: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .ls-panel-toggle span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Estado colapsado: barra compacta que no obstruye el mapa */
+  .ls-panel.collapsed {
+    max-height: 44px;
+    overflow: hidden;
+  }
+  .ls-panel.collapsed .ls-panel-body {
+    display: none;
+  }
+
+  /* Cuerpo scrollable del panel cuando está abierto */
+  .ls-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem 0.875rem 1.25rem;
+    gap: 0.625rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Pasos 1 y 2 compactos ──────────────────────────────── */
+  .ls-step {
+    padding: 0.625rem 0.75rem;
+    border-radius: 10px;
+  }
+  .ls-step-header { margin-bottom: 0.375rem; }
+  .ls-step-num { width: 22px; height: 22px; font-size: 0.7rem; }
+  .ls-step-title { font-size: 0.6rem; }
+  .ls-step-value { font-size: 0.825rem; }
+  .ls-step-hint  { font-size: 0.75rem; }
+  .ls-step-actions { gap: 0.375rem; }
+  .ls-action-btn {
+    height: 38px;
+    font-size: 0.72rem;
+    border-radius: 8px;
+  }
+  .ls-action-btn.gps { width: 56px; flex: 0 0 auto; }
+
+  /* ── Algoritmos: cuadrícula 2x2 perfecta (NO carrusel cortado) ── */
+  .ls-section {
+    margin-top: 0;
+  }
+  .ls-section-label {
+    font-size: 0.625rem;
+    margin-bottom: 0.375rem;
+  }
+  .ls-alg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    overflow: visible;
+  }
+  .ls-alg-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0.5rem 0.625rem;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border-2);
+    min-height: 48px;
+    width: 100%;
+    text-align: left;
+    gap: 2px;
+  }
+  .ls-alg-btn.selected {
+    background: color-mix(in srgb, var(--alg-color) 12%, var(--surface));
+    border-color: var(--alg-color);
+    box-shadow: 0 0 0 1px var(--alg-color);
+  }
+  .ls-alg-dot { display: none; }
+  .ls-alg-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-1);
+    white-space: normal;
+  }
+  .ls-alg-desc {
+    font-size: 0.62rem;
+    line-height: 1.2;
+    color: var(--text-3);
+    margin-top: 1px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ── Botón de calcular ──────────────────────────────────── */
+  .ls-calc-btn {
+    height: 46px;
+    font-size: 0.9rem;
+    border-radius: 10px;
+    margin-top: 0.25rem;
+  }
+
+  /* ── Resultados ─────────────────────────────────────────── */
+  .ls-results {
+    padding: 0.75rem;
+    border-radius: 12px;
+    gap: 0.625rem;
+  }
+  .ls-score-circle {
+    width: 54px;
+    height: 54px;
+  }
+  .ls-score-num { font-size: 0.95rem; }
+  .ls-score-label { font-size: 0.55rem; }
+  .ls-stat { font-size: 0.75rem; }
+  .ls-save-btn { height: 38px; font-size: 0.75rem; }
+  .ls-dirs-list { max-height: 130px; }
+  .ls-direction-item { font-size: 0.72rem; }
+}
+
+/* ── Touch: eliminar tap highlight en móviles ────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  button { -webkit-tap-highlight-color: transparent; }
+}

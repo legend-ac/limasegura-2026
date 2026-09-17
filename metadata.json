@@ -1,0 +1,6 @@
+{
+  "name": "LimaSegura 2026 - Algoritmos de Búsqueda y Factor de Aglomeración",
+  "description": "Sistema de cálculo de rutas seguras en Lima mediante algoritmos de búsqueda (A*, Dijkstra) con gestión del radio de aglomeración, modo offline de emergencia y sincronización móvil.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
