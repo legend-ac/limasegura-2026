@@ -90,11 +90,12 @@ export const GuidedTour: React.FC<{ forceShow?: boolean; onClose?: () => void }>
   const [device, setDevice] = useState<DeviceType>('desktop');
 
   useEffect(() => {
-    // Auto-show only if forceShow is true (triggered by user clicking help button)
-    // Do NOT auto-block the app on startup
     if (forceShow) {
       setVisible(true);
       setStep(0);
+    } else {
+      // Ensure tour is always hidden when forceShow is false
+      setVisible(false);
     }
   }, [forceShow]);
 
@@ -127,7 +128,8 @@ export const GuidedTour: React.FC<{ forceShow?: boolean; onClose?: () => void }>
     handleComplete();
   };
 
-  if (!visible) return null;
+  // HARD GUARD: never render unless explicitly triggered by user action
+  if (!forceShow || !visible) return null;
 
   const currentStep = TOUR_STEPS[step];
   const Icon = currentStep.icon;

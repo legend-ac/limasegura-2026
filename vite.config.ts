@@ -38,6 +38,11 @@ export default defineConfig(() => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
+          // Force immediate SW activation — evicts old cached bundle on every deploy
+          skipWaiting: true,
+          clientsClaim: true,
+          // Clean old caches from previous SW versions
+          cleanupOutdatedCaches: true,
         },
         devOptions: {
           enabled: false,

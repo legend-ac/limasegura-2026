@@ -35,7 +35,7 @@
   --font-mono:  'JetBrains Mono', monospace;
   --header-h:   56px;
   /* Modo oscuro: tiles OSM se invierten para look nocturno */
-  --tile-filter: invert(100%) hue-rotate(180deg) brightness(0.85) contrast(1.05) saturate(0.4);
+  --tile-filter: brightness(0.45) contrast(1.1) saturate(0.6);
 }
 
 /* ── Tokens — MODO DÍA ──────────────────────────────────────── */
