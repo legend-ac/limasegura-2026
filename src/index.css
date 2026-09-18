@@ -6,12 +6,6 @@
    Cada uno tiene su propio diseño visual distintivo
    ══════════════════════════════════════════════════════════════ */
 
-/* ══════════════════════════════════════════════════════════════
-   LimaSegura 2026 — CSS Completo v2
-   3 layouts independientes: Móvil / Tablet / Desktop
-   Cada uno tiene su propio diseño visual distintivo
-   ══════════════════════════════════════════════════════════════ */
-
 /* ── Tokens — MODO NOCHE (por defecto) ──────────────────────── */
 :root {
   --bg:         #0D1117;
@@ -19,6 +13,7 @@
   --bg-3:       #1C2333;
   --surface:    #1F2937;
   --surface-2:  #263045;
+  --surface-3:  #2D3748;
   --border:     rgba(255,255,255,0.08);
   --border-2:   rgba(255,255,255,0.14);
   --text-1:     #F0F6FC;
@@ -50,6 +45,7 @@ html.light-mode {
   --bg-3:       #EEF1F5;
   --surface:    #E8ECF2;
   --surface-2:  #DDE3EC;
+  --surface-3:  #CDD5E0;
   --border:     rgba(0,0,0,0.08);
   --border-2:   rgba(0,0,0,0.14);
   --text-1:     #0D1117;
@@ -72,7 +68,7 @@ html.light-mode {
 :root {
   --c-bg: var(--bg);
   --c-surface: var(--bg-2);
-  --c-surface-2: var(--bg-3);
+  --c-surface-2: var(--surface-2);
   --c-surface-3: var(--surface);
   --c-border: var(--border);
   --c-border-md: var(--border-2);

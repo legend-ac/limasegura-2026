@@ -98,6 +98,8 @@ export const MapContainer: React.FC<Props> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<L.Map | null>(null);
+  // Used to cancel pending geocode callbacks after marker drag finishes
+  const dragCancelRef = useRef<boolean>(false);
 
   const L_origin    = useRef<L.Marker | null>(null);
   const L_dest      = useRef<L.Marker | null>(null);
@@ -130,7 +132,13 @@ export const MapContainer: React.FC<Props> = ({
     mapRef.current = map;
     setTimeout(() => map.invalidateSize(), 250);
 
-    return () => { map.remove(); mapRef.current = null; };
+    // Auto-fix map size when container is resized (e.g. panel open/close)
+    const ro = new ResizeObserver(() => {
+      map.invalidateSize({ animate: false });
+    });
+    ro.observe(el);
+
+    return () => { ro.disconnect(); map.remove(); mapRef.current = null; };
   }, []);
 
   // ── Cursor for selection mode ────────────────────────────────
@@ -185,15 +193,16 @@ export const MapContainer: React.FC<Props> = ({
       .bindTooltip(`<b>Origen (A):</b> ${originPoint.label}`, { direction: 'top' });
 
     m.on('dragend', async () => {
+      dragCancelRef.current = false;
       const { lat, lng } = m.getLatLng();
       const nearest = findNearestNode(lat, lng, nodes);
       const distM = calculateDistanceMeters(lat, lng, nearest.lat, nearest.lng);
       const initialLabel = distM < 150 ? nearest.name : `Punto en ${nearest.district}`;
-
       onPointSelected({ lat, lng, label: initialLabel, nearestNode: nearest }, 'origin');
       try {
         const street = await reverseGeocodeStreet(lat, lng);
-        if (street) {
+        // Only update if this drag op wasn't superseded by another drag
+        if (street && !dragCancelRef.current) {
           onPointSelected({ lat, lng, label: street, nearestNode: nearest }, 'origin');
         }
       } catch {}
@@ -213,15 +222,16 @@ export const MapContainer: React.FC<Props> = ({
       .bindTooltip(`<b>Destino (B):</b> ${destPoint.label}`, { direction: 'top' });
 
     m.on('dragend', async () => {
+      dragCancelRef.current = false;
       const { lat, lng } = m.getLatLng();
       const nearest = findNearestNode(lat, lng, nodes);
       const distM = calculateDistanceMeters(lat, lng, nearest.lat, nearest.lng);
       const initialLabel = distM < 150 ? nearest.name : `Punto en ${nearest.district}`;
-
       onPointSelected({ lat, lng, label: initialLabel, nearestNode: nearest }, 'destination');
       try {
         const street = await reverseGeocodeStreet(lat, lng);
-        if (street) {
+        // Only update if this drag op wasn't superseded by another drag
+        if (street && !dragCancelRef.current) {
           onPointSelected({ lat, lng, label: street, nearestNode: nearest }, 'destination');
         }
       } catch {}
