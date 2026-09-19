@@ -2,9 +2,33 @@
  * Geocoding & Reverse Geocoding Utility
  * Usa el servicio público de OpenStreetMap (Nominatim) para obtener nombres
  * de calles reales en Lima al tocar cualquier punto del mapa.
+ *
+ * Reglas de uso de Nominatim:
+ *  - User-Agent obligatorio (Nominatim bloquea solicitudes sin identificador)
+ *  - Máximo 1 solicitud/segundo (debounce de 1100ms)
+ *  - Caché local para evitar re-consultar la misma posición
  */
 
 const geocodeCache = new Map<string, string>();
+
+// User-Agent requerido por la política de Nominatim (bloquea HTTP 403 sin esto)
+const NOMINATIM_HEADERS = {
+  'Accept-Language': 'es-PE,es;q=0.9',
+  'User-Agent': 'LimaSegura-2026/2.2 (https://limasegura-2026.vercel.app)',
+};
+
+// Rate-limiter: Nominatim permite máximo 1 req/seg
+let lastRequestTime = 0;
+const MIN_INTERVAL_MS = 1100;
+
+async function waitRateLimit(): Promise<void> {
+  const now = Date.now();
+  const elapsed = now - lastRequestTime;
+  if (elapsed < MIN_INTERVAL_MS) {
+    await new Promise(r => setTimeout(r, MIN_INTERVAL_MS - elapsed));
+  }
+  lastRequestTime = Date.now();
+}
 
 // Palabras genéricas que NO son útiles como nombre de ubicación
 const GENERIC_NAMES = new Set([
@@ -14,7 +38,6 @@ const GENERIC_NAMES = new Set([
 
 function isUsefulName(name: string): boolean {
   if (!name || name.trim().length < 3) return false;
-  // Rechazar si es solo un nombre genérico de ciudad/país
   const parts = name.split(',').map(p => p.trim());
   return parts.some(p => !GENERIC_NAMES.has(p) && p.length > 2);
 }
@@ -30,10 +53,12 @@ export async function reverseGeocodeStreet(lat: number, lng: number): Promise<st
   }
 
   try {
+    await waitRateLimit();
+
     // zoom=17 da mejor precisión de calle sin ser demasiado granular
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=17&addressdetails=1`;
     const res = await fetch(url, {
-      headers: { 'Accept-Language': 'es-PE,es;q=0.9' },
+      headers: NOMINATIM_HEADERS,
       signal: AbortSignal.timeout(5000),
     });
 
@@ -92,7 +117,6 @@ export async function reverseGeocodeStreet(lat: number, lng: number): Promise<st
     // Último recurso: usar display_name pero solo los primeros segmentos útiles
     if (data.display_name) {
       const parts = data.display_name.split(',').map((p: string) => p.trim());
-      // Filtrar partes genéricas y tomar las más específicas
       const useful = parts.filter((p: string) => !GENERIC_NAMES.has(p) && p.length > 2);
       if (useful.length > 0) {
         const clean = useful.slice(0, 2).join(', ');

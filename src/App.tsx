@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GraphNode, RouteResult, SavedRoute, CrowdHotspot, RiskIncident } from './types';
 import { LIMA_NODES, LIMA_EDGES, INITIAL_CROWD_HOTSPOTS, INITIAL_INCIDENTS } from './data/limaGraph';
 import { solveRoute, findNearestNode, extractCorridorWaypoints, calculateDistanceMeters } from './utils/algorithms';
@@ -117,8 +117,13 @@ export default function App() {
     setCalcError(null);
   }, []);
 
+  // Ref to break forward reference: swapPoints and loadRoute need calculateRoute
+  // but calculateRoute is declared after them. The ref is updated after mount.
+  const calculateRouteRef = useRef<(compare?: boolean) => Promise<void>>(async () => {});
+
   const swapPoints = useCallback(() => {
     if (!originPoint && !destPoint) return;
+    const hadRoute = !!safeRoute;
     const tempOrigin = originPoint;
     const tempDest = destPoint;
     setOriginPoint(tempDest);
@@ -126,7 +131,10 @@ export default function App() {
     setSafeRoute(null); setStdRoute(null);
     setSafeOsrm(null);  setStdOsrm(null);
     setCalcError(null);
-  }, [originPoint, destPoint]);
+    if (hadRoute && tempDest && tempOrigin) {
+      setTimeout(() => calculateRouteRef.current(compareConventional), 80);
+    }
+  }, [originPoint, destPoint, safeRoute, compareConventional]);
 
   const detectLocation = useCallback(() => {
     if (!navigator.geolocation) { setCalcError('Tu dispositivo no soporta geolocalización.'); return; }
@@ -215,6 +223,9 @@ export default function App() {
     setCalculating(false);
   }, [originPoint, destPoint, nodes, edges, hotspots, incidents, compareConventional, walkingMode]);
 
+  // Keep the ref in sync so swapPoints/loadRoute always call the latest version
+  calculateRouteRef.current = calculateRoute;
+
   const saveRoute = () => {
     if (!safeRoute || !originPoint || !destPoint) return;
     if (saved.some(s => s.originId === originPoint.nearestNode.id && s.destinationId === destPoint.nearestNode.id)) return;
@@ -233,15 +244,22 @@ export default function App() {
     }, ...prev]);
   };
 
-  const loadRoute = (r: SavedRoute) => {
+  const loadRoute = useCallback((r: SavedRoute) => {
     const oNode = nodes.find(n => n.id === r.originId);
     const dNode = nodes.find(n => n.id === r.destinationId);
-    if (oNode) setOriginPoint({ lat: oNode.lat, lng: oNode.lng, label: oNode.name, nearestNode: oNode });
-    if (dNode) setDestPoint({ lat: dNode.lat, lng: dNode.lng, label: dNode.name, nearestNode: dNode });
+    if (!oNode || !dNode) { setFavOpen(false); return; }
+    const oPoint = { lat: oNode.lat, lng: oNode.lng, label: oNode.name, nearestNode: oNode };
+    const dPoint = { lat: dNode.lat, lng: dNode.lng, label: dNode.name, nearestNode: dNode };
+    setOriginPoint(oPoint);
+    setDestPoint(dPoint);
     setSafeRoute(null); setSafeOsrm(null);
     setStdRoute(null);  setStdOsrm(null);
     setStep(3); setFavOpen(false);
-  };
+    // Auto-draw the saved route immediately — no need to press Calcular again
+    setTimeout(() => {
+      if (oPoint && dPoint) calculateRouteRef.current(compareConventional);
+    }, 100);
+  }, [nodes, compareConventional]);
 
   const reset = () => {
     setOriginPoint(null); setDestPoint(null);
@@ -295,10 +313,17 @@ export default function App() {
         </div>
 
         <div className="ls-header-actions">
-          {/* Modo caminata */}
+          {/* Modo caminata — recalcula la ruta si ya había una activa */}
           <button
             className={`ls-icon-btn ${walkingMode ? 'active walk-active' : ''}`}
-            onClick={() => setWalkingMode(v => !v)}
+            onClick={() => {
+              const next = !walkingMode;
+              setWalkingMode(next);
+              // Recalculate with new profile (walking/driving) if a route is active
+              if (safeRoute && originPoint && destPoint) {
+                setTimeout(() => calculateRoute(compareConventional), 80);
+              }
+            }}
             title={walkingMode ? 'Desactivar modo caminata' : 'Activar modo caminata a pie'}
           >
             <Footprints size={16} />
@@ -376,6 +401,11 @@ export default function App() {
             stdStreetCoords={stdOsrm?.coordinates ?? null}
             showRiskZones={showRisk}
             onPointSelected={handlePointSelected}
+            onRouteInvalidated={() => {
+              setSafeRoute(null); setStdRoute(null);
+              setSafeOsrm(null);  setStdOsrm(null);
+              setCalcError(null);
+            }}
           />
         </div>
 
@@ -653,9 +683,14 @@ export default function App() {
                       {showDirs && (
                         <div className="ls-dirs-list">
                           {safeRoute.stepByStepDirections.map((d, i) => (
-                            <div key={i} className="ls-direction-item">
+                            <div key={i} className={`ls-direction-item ${d.warning ? 'has-warning' : ''}`}>
                               <span className="ls-dir-num">{i + 1}</span>
-                              <span className="ls-dir-text">{d.instruction}</span>
+                              <div className="ls-dir-content">
+                                <span className="ls-dir-text">{d.instruction}</span>
+                                {d.warning && (
+                                  <span className="ls-dir-warning">⚠️ {d.warning}</span>
+                                )}
+                              </div>
                               {d.distanceMeters > 0 && (
                                 <span className="ls-dir-dist">
                                   {d.distanceMeters < 1000

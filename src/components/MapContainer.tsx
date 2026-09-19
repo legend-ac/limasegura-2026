@@ -36,6 +36,8 @@ interface Props {
   stdStreetCoords:  [number, number][] | null;
   showRiskZones: boolean;
   onPointSelected: (point: FreePoint, role: 'origin' | 'destination') => void;
+  /** Called when a marker is dragged — tells App to clear the stale route */
+  onRouteInvalidated?: () => void;
 }
 
 // ── Marker icon factories ───────────────────────────────────────
@@ -94,7 +96,7 @@ export const MapContainer: React.FC<Props> = ({
   originPoint, destPoint,
   selectionMode, safeRoute, standardRoute,
   safeStreetCoords, stdStreetCoords,
-  showRiskZones, onPointSelected,
+  showRiskZones, onPointSelected, onRouteInvalidated,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef       = useRef<L.Map | null>(null);
@@ -192,6 +194,12 @@ export const MapContainer: React.FC<Props> = ({
       .addTo(map)
       .bindTooltip(`<b>Origen (A):</b> ${originPoint.label}`, { direction: 'top' });
 
+    m.on('dragstart', () => {
+      dragCancelRef.current = true;
+      // Clear stale route immediately so the polyline doesn't linger on old position
+      onRouteInvalidated?.();
+    });
+
     m.on('dragend', async () => {
       dragCancelRef.current = false;
       const { lat, lng } = m.getLatLng();
@@ -220,6 +228,12 @@ export const MapContainer: React.FC<Props> = ({
     const m = L.marker([destPoint.lat, destPoint.lng], { icon: makeDestIcon(), draggable: true })
       .addTo(map)
       .bindTooltip(`<b>Destino (B):</b> ${destPoint.label}`, { direction: 'top' });
+
+    m.on('dragstart', () => {
+      dragCancelRef.current = true;
+      // Clear stale route immediately so the polyline doesn't linger on old position
+      onRouteInvalidated?.();
+    });
 
     m.on('dragend', async () => {
       dragCancelRef.current = false;

@@ -123,6 +123,10 @@ export const LIMA_EDGES: GraphEdge[] = [
   { from: 'node_larcomar', to: 'node_estacion_bulevar', distanceKm: 1.70, streetName: 'Av. Armendáriz / Panamericana Sur', type: 'avenida' },
   { from: 'node_estacion_bulevar', to: 'node_plaza_barranco', distanceKm: 0.35, streetName: 'Jr. Batalla de Junín', type: 'calle' },
   { from: 'node_metro_la_cultura', to: 'node_ovalo_higuereta', distanceKm: 4.50, streetName: 'Av. Aviación', type: 'avenida' },
+  // Av. Aviación: conexión directa Gamarra ↔ La Cultura (Línea 1 Metro)
+  { from: 'node_estacion_gamarra', to: 'node_metro_la_cultura', distanceKm: 2.40, streetName: 'Av. Aviación', type: 'avenida' },
+  // Conexión Ovalo Higuereta → Barranco / Surco
+  { from: 'node_ovalo_higuereta', to: 'node_estacion_bulevar', distanceKm: 3.60, streetName: 'Av. Tomás Marsano / Panamericana Sur', type: 'avenida' },
 ];
 
 export const INITIAL_CROWD_HOTSPOTS: CrowdHotspot[] = [
