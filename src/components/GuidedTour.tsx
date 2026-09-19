@@ -35,7 +35,7 @@ const TOUR_STEPS: TourStep[] = [
     tips: {
       mobile: 'Desliza hacia abajo para ver el panel de control debajo del mapa.',
       tablet: 'El panel de control está a la izquierda del mapa. Toca para interactuar.',
-      desktop: 'Usa el panel izquierdo para configurar tu ruta y el mapa a la derecha para visualizarla.',
+      desktop: 'Usa el panel lateral derecho para configurar tu ruta y el mapa a la izquierda para visualizarla.',
     },
   },
   {
@@ -57,7 +57,7 @@ const TOUR_STEPS: TourStep[] = [
     tips: {
       mobile: 'Desliza abajo del mapa y toca el campo "Punto de destino" para seleccionar.',
       tablet: 'Selecciona el destino en el panel lateral izquierdo debajo del origen.',
-      desktop: 'En el panel izquierdo, paso 2, selecciona o marca tu destino en el mapa.',
+      desktop: 'En el panel derecho, paso 2, selecciona o marca tu destino en el mapa.',
     },
   },
   {
@@ -79,7 +79,7 @@ const TOUR_STEPS: TourStep[] = [
     tips: {
       mobile: 'La ruta aparecerá en el mapa arriba. Desliza abajo para ver los detalles.',
       tablet: 'La ruta se muestra en el mapa y los resultados aparecen debajo del panel.',
-      desktop: 'La ruta se traza en el mapa. Los resultados detallados aparecen en el panel izquierdo.',
+      desktop: 'La ruta se traza en el mapa y los resultados detallados aparecen en el panel derecho.',
     },
   },
 ];
@@ -111,6 +111,18 @@ export const GuidedTour: React.FC<{ forceShow?: boolean; onClose?: () => void }>
     setVisible(false);
     onClose?.();
   }, [onClose]);
+
+  // Handle Escape key to dismiss tour
+  useEffect(() => {
+    if (!visible) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleComplete();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [visible, handleComplete]);
 
   const handleNext = () => {
     if (step < TOUR_STEPS.length - 1) {
@@ -147,7 +159,18 @@ export const GuidedTour: React.FC<{ forceShow?: boolean; onClose?: () => void }>
   return (
     <AnimatePresence>
       {visible && (
-        <>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: isMobile ? '12px' : '24px',
+            pointerEvents: 'auto',
+          }}
+        >
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -155,33 +178,35 @@ export const GuidedTour: React.FC<{ forceShow?: boolean; onClose?: () => void }>
             exit={{ opacity: 0 }}
             onClick={handleSkip}
             style={{
-              position: 'fixed', inset: 0, zIndex: 9998,
-              background: 'rgba(0,0,0,0.7)',
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(0,0,0,0.45)',
               backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
             }}
           />
 
-          {/* Modal */}
+          {/* Modal Card - Flexbox centered */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 20 }}
+            exit={{ opacity: 0, scale: 0.94, y: 16 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
             style={{
-              position: 'fixed',
-              zIndex: 9999,
-              top: '50%', left: '50%',
-              transform: 'translate(-50%, -50%)',
+              position: 'relative',
+              zIndex: 1,
               width: modalWidth,
-              maxWidth: '95vw',
+              maxWidth: '100%',
               maxHeight: '90vh',
               overflowY: 'auto',
               background: 'var(--c-surface)',
               border: '1px solid var(--c-border-md)',
               borderRadius: isMobile ? 'var(--r-xl)' : 'var(--r-2xl)',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.6)',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06)',
               padding,
-              display: 'flex', flexDirection: 'column', gap: '1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem',
             }}
           >
             {/* Header */}
@@ -375,7 +400,7 @@ export const GuidedTour: React.FC<{ forceShow?: boolean; onClose?: () => void }>
               </button>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

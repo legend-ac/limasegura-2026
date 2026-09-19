@@ -173,6 +173,8 @@ npm run build
 
 ## Historial de Mejoras Recientes
 
+- v2.2 (sep 2026): Centrado geométrico perfecto del tour mediante flexbox — elimina conflicto de traslación de Framer Motion en pantallas de alta resolución.
+- v2.2 (sep 2026): Soporte para cierre con tecla Escape y ajuste de textos explicativos según dispositivo (panel derecho en PC, izquierdo en tablet, inferior en celular).
 - v2.1 (sep 2026): Geocodificación corregida — filtro de nombres genéricos, soporte para amenity/building/shop, timeout robusto y Accept-Language es-PE.
 - v2.1 (sep 2026): ResizeObserver en MapContainer — el mapa redibuja tiles automáticamente al abrir/cerrar el panel lateral.
 - v2.1 (sep 2026): Fix race condition en drag de marcadores — previene que geocode desactualizado sobreescriba la posición actual.
