@@ -226,6 +226,40 @@ export default function App() {
   // Keep the ref in sync so swapPoints/loadRoute always call the latest version
   calculateRouteRef.current = calculateRoute;
 
+  /**
+   * Activar/desactivar la ruta de comparación SIN re-calcular la ruta segura.
+   * Si se activa y ya hay una ruta segura calculada, calcula solo la directa.
+   * Si se desactiva, limpia inmediatamente la ruta directa del mapa.
+   */
+  const toggleCompare = useCallback(async (show: boolean) => {
+    setCompareConventional(show);
+
+    if (!show) {
+      // Desactivar: quitar ruta directa del mapa al instante
+      setStdRoute(null);
+      setStdOsrm(null);
+      return;
+    }
+
+    // Activar: solo calcular ruta directa si ya existe ruta segura
+    if (!safeRoute || !originPoint || !destPoint) return;
+
+    const direct = solveRoute(
+      originPoint.nearestNode.id, destPoint.nearestNode.id,
+      nodes, edges, hotspots, incidents, 'dijkstra', 0.8, 0
+    );
+    setStdRoute(direct ?? null);
+
+    // Trazar ruta directa real por calles con OSRM
+    const profile = walkingMode ? 'walking' : 'driving';
+    const directOsrm = await fetchOsrmRoute(
+      originPoint.lat, originPoint.lng,
+      destPoint.lat,   destPoint.lng,
+      { alternatives: false, profile }
+    );
+    setStdOsrm(directOsrm[0] ?? null);
+  }, [safeRoute, originPoint, destPoint, nodes, edges, hotspots, incidents, walkingMode]);
+
   const saveRoute = () => {
     if (!safeRoute || !originPoint || !destPoint) return;
     if (saved.some(s => s.originId === originPoint.nearestNode.id && s.destinationId === destPoint.nearestNode.id)) return;
@@ -517,13 +551,7 @@ export default function App() {
                   <input
                     type="checkbox"
                     checked={compareConventional}
-                    onChange={(e) => {
-                      const nextVal = e.target.checked;
-                      setCompareConventional(nextVal);
-                      if (originPoint && destPoint && safeRoute) {
-                        calculateRoute(nextVal);
-                      }
-                    }}
+                    onChange={(e) => toggleCompare(e.target.checked)}
                   />
                   <span>Mostrar ruta directa en el mapa para comparar</span>
                 </label>
