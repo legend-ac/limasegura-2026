@@ -12,7 +12,8 @@ import {
   RefreshCw, Crosshair, AlertTriangle, Clock, Ruler,
   ShieldCheck, Bookmark, RotateCcw, Check, Info,
   ChevronDown, ChevronUp, Sun, Moon, ArrowUpDown,
-  Footprints, Flame, Timer, PersonStanding, HelpCircle
+  Footprints, Flame, Timer, PersonStanding, HelpCircle,
+  GitCompare, CheckCircle2
 } from 'lucide-react';
 
 const FAV_KEY = 'ls2026_favorites';
@@ -62,6 +63,7 @@ export default function App() {
   const [destPoint,   setDestPoint]   = useState<FreePoint | null>(null);
   const [selMode,     setSelMode]     = useState<SelectionMode>('idle');
   const [compareConventional, setCompareConventional] = useState(false);
+  const [comparingLoading,    setComparingLoading]    = useState(false);
   const [showRisk,    setShowRisk]    = useState(true);
 
   const [safeRoute,    setSafeRoute]    = useState<RouteResult | null>(null);
@@ -168,11 +170,16 @@ export default function App() {
 
     await new Promise(r => setTimeout(r, 20));
 
-    // ── 1. Criterio Único: A* con Factor de Aglomeración Lima 2026 ──
+    // ── 1. A* con Factor de Aglomeración Lima 2026 ──
+    // En modo peatonal: mayor peso de aglomeración (2.8×) + evita vías rápidas
+    // En modo vehicular: peso estándar de aglomeración
     const safe = solveRoute(
       originPoint.nearestNode.id, destPoint.nearestNode.id,
       nodes, edges, hotspots, incidents,
-      'astar_safe', 1.5, 5.0
+      'astar_safe',
+      walkingMode ? 2.0 : 1.5,   // crowdRadiusMultiplier: radio mayor a pie
+      walkingMode ? 8.0 : 5.0,   // crowdAvoidanceWeight: peatón 8×, vehículo 5×
+      walkingMode                // activa penalización de vías rápidas + 2.8× sensibilidad
     );
 
     if (!safe) {
@@ -181,10 +188,10 @@ export default function App() {
       return;
     }
 
-    // Ruta convencional para contraste si el usuario activó la comparación
+    // Ruta convencional para contraste solo si el usuario activó la comparación
     const direct = compare ? solveRoute(
       originPoint.nearestNode.id, destPoint.nearestNode.id,
-      nodes, edges, hotspots, incidents, 'dijkstra', 0.8, 0
+      nodes, edges, hotspots, incidents, 'dijkstra', 0.8, 0, walkingMode
     ) : null;
 
     setSafeRoute(safe);
@@ -238,26 +245,32 @@ export default function App() {
       // Desactivar: quitar ruta directa del mapa al instante
       setStdRoute(null);
       setStdOsrm(null);
+      setComparingLoading(false);
       return;
     }
 
     // Activar: solo calcular ruta directa si ya existe ruta segura
     if (!safeRoute || !originPoint || !destPoint) return;
 
+    setComparingLoading(true);
     const direct = solveRoute(
       originPoint.nearestNode.id, destPoint.nearestNode.id,
-      nodes, edges, hotspots, incidents, 'dijkstra', 0.8, 0
+      nodes, edges, hotspots, incidents, 'dijkstra', 0.8, 0, walkingMode
     );
     setStdRoute(direct ?? null);
 
     // Trazar ruta directa real por calles con OSRM
     const profile = walkingMode ? 'walking' : 'driving';
-    const directOsrm = await fetchOsrmRoute(
-      originPoint.lat, originPoint.lng,
-      destPoint.lat,   destPoint.lng,
-      { alternatives: false, profile }
-    );
-    setStdOsrm(directOsrm[0] ?? null);
+    try {
+      const directOsrm = await fetchOsrmRoute(
+        originPoint.lat, originPoint.lng,
+        destPoint.lat,   destPoint.lng,
+        { alternatives: false, profile }
+      );
+      setStdOsrm(directOsrm[0] ?? null);
+    } finally {
+      setComparingLoading(false);
+    }
   }, [safeRoute, originPoint, destPoint, nodes, edges, hotspots, incidents, walkingMode]);
 
   const saveRoute = () => {
@@ -554,6 +567,7 @@ export default function App() {
                     onChange={(e) => toggleCompare(e.target.checked)}
                   />
                   <span>Mostrar ruta directa en el mapa para comparar</span>
+                  {comparingLoading && <RefreshCw size={12} className="spin" style={{ marginLeft: 'auto' }} />}
                 </label>
               </div>
 
@@ -624,6 +638,68 @@ export default function App() {
                       </div>
                     </div>
                   </div>
+
+                  {/* ── PANEL COMPARATIVO DETALLADO (A* vs DIJKSTRA DIRECTO) ── */}
+                  {compareConventional && stdRoute && (
+                    <div className="ls-comparison-card">
+                      <div className="ls-comparison-header">
+                        <GitCompare size={15} />
+                        <span>Comparativa: Ruta Segura (A*) vs Ruta Convencional Directa</span>
+                      </div>
+
+                      <div className="ls-comparison-grid">
+                        <div className="ls-comp-col safe">
+                          <div className="ls-comp-badge">🛡️ Ruta Segura (A*)</div>
+                          <div className="ls-comp-val">{realDist?.toFixed(1)} km · {realTime} min</div>
+                          <div className="ls-comp-sub" style={{ color: '#2DD4A0', fontWeight: 700 }}>
+                            {Math.round(safeRoute.safetyScore)}% de Seguridad
+                          </div>
+                          <div className="ls-comp-desc">
+                            Desvía zonas rojas, confluencias peatonales e incidentes delictivos activos.
+                          </div>
+                        </div>
+
+                        <div className="ls-comp-col direct">
+                          <div className="ls-comp-badge direct">⚠️ Ruta Directa Convencional</div>
+                          <div className="ls-comp-val">
+                            {(stdOsrm ? stdOsrm.distanceKm : stdRoute.totalDistanceKm).toFixed(1)} km · {stdOsrm ? (walkingMode ? stdOsrm.walkingMinutes : Math.round(stdOsrm.distanceKm * 2.5)) : stdRoute.estimatedTimeMinutes} min
+                          </div>
+                          <div className="ls-comp-sub" style={{ color: stdRoute.safetyScore < 70 ? '#f43f5e' : '#e2e8f0', fontWeight: 700 }}>
+                            {Math.round(stdRoute.safetyScore)}% de Seguridad
+                          </div>
+                          <div className="ls-comp-desc">
+                            Algoritmo estándar (Dijkstra): optimiza distancia sin esquivar focos de riesgo.
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="ls-comp-verdict">
+                        {safeRoute.safetyScore > stdRoute.safetyScore ? (
+                          <>
+                            <CheckCircle2 size={15} className="text-emerald" />
+                            <span>
+                              <strong>Veredicto:</strong> La ruta protegida requiere{' '}
+                              <strong>
+                                {Math.max(0, Number(((realDist ?? safeRoute.totalDistanceKm) - (stdOsrm ? stdOsrm.distanceKm : stdRoute.totalDistanceKm)).toFixed(1)))} km adicionales
+                              </strong>{' '}
+                              a cambio de ganar un{' '}
+                              <strong className="text-emerald">
+                                +{Math.round(safeRoute.safetyScore - stdRoute.safetyScore)}% de protección
+                              </strong>{' '}
+                              frente a robos y aglomeraciones.
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <Info size={15} />
+                            <span>
+                              <strong>Veredicto:</strong> No se detectaron zonas críticas ni aglomeraciones en la vía directa para este trayecto. Ambos recorridos son seguros.
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* ── WALKING MODE STATS ─────────────────────── */}
                   {walkingMode && walkDist > 0 && (

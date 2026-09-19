@@ -19,7 +19,7 @@ export interface GraphEdge {
   to: string;
   distanceKm: number;
   streetName: string;
-  type?: 'avenida' | 'via_expresa' | 'calle' | 'jiron';
+  type?: 'avenida' | 'via_expresa' | 'calle' | 'jiron' | 'peatonal' | 'via_rapida' | 'autopista';
 }
 
 export interface CrowdHotspot {
@@ -40,7 +40,7 @@ export interface RiskIncident {
   id: string;
   title: string;
   district: string;
-  type: 'congestion' | 'manifestacion' | 'obras' | 'inseguridad' | 'aglomeracion_masiva';
+  type: 'congestion' | 'manifestacion' | 'obras' | 'inseguridad' | 'aglomeracion_masiva' | 'zona_peligrosa' | 'accidente';
   severity: 'moderada' | 'alta' | 'critica';
   lat: number;
   lng: number;

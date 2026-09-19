@@ -1,314 +1,249 @@
-﻿# 🛡️ LimaSegura 2026
+# 🛡️ LimaSegura 2026
 
-**Plataforma de navegación urbana segura para Lima Metropolitana**
-Algoritmos de búsqueda inteligente + Factor de Aglomeración en tiempo real
+**Plataforma de Navegación Urbana Inteligente con Factor de Aglomeración y Mitigación de Riesgos**  
+*Desarrollada para Lima Metropolitana · Algoritmo A\* Multicriterio · Modelado de Red Vial Peatonal y Vehicular*
 
 [![Deploy](https://img.shields.io/badge/Vercel-Live-brightgreen?logo=vercel)](https://limasegura-2026.vercel.app)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb?logo=react)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6-646cff?logo=vite)](https://vitejs.dev/)
 [![PWA](https://img.shields.io/badge/PWA-Offline--ready-orange)](https://web.dev/progressive-web-apps/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ---
 
-## 📌 ¿Qué es esto y para qué sirve?
+## 📌 Índice General
 
-Lima es una de las ciudades más densas y complejas de Sudamérica. Moverse por ella tiene un problema que los mapas convencionales (Google Maps, Waze) **ignoran completamente**: la seguridad de la ruta.
-
-**LimaSegura** resuelve ese problema. Dado un punto de origen y un destino dentro de Lima Metropolitana, la aplicación:
-
-1. Calcula la ruta **más segura** usando A\* con penalización de zonas peligrosas y aglomeraciones
-2. Traza esa ruta sobre calles reales usando OpenStreetMap + OSRM
-3. Opcionalmente muestra la ruta directa convencional para que el usuario compare visualmente cuánto rodea la ruta segura y por qué vale la pena
-4. Da instrucciones paso a paso con alertas de zonas de riesgo
-
-No es solo un calculador de rutas. Es un sistema que toma en cuenta **incidentes activos**, **zonas de alta densidad peatonal**, **horario** y **perfil de caminata** del usuario.
+1. [¿Por qué existe este proyecto? (El Porqué)](#-el-porqué-justificación-y-problemática-en-lima)
+2. [¿De qué está compuesto el sistema? (El De Qué)](#-el-de-qué-fundamentos-y-arquitectura-técnica)
+3. [El Botón de Comparación: Propósito Real y Cómo Funciona](#-el-botón-mostrar-ruta-directa-para-comparar)
+4. [Diferenciación de Modos: Caminata (A Pie) vs Vehicular](#-modo-a-pie-caminata-vs-modo-vehicular)
+5. [Topología y Zonas Críticas del Perú (Lima Metropolitana)](#-cobertura-geográfica-y-contexto-peruano)
+6. [Formulación Matemática y Complejidad Algorítmica](#-formulación-matemática-y-algoritmos)
+7. [Guía de Instalación y Despliegue](#-instalación-y-despliegue)
+8. [Créditos y Referencias](#-referencias)
 
 ---
 
-## 🧠 ¿Por qué A\* y no Dijkstra?
+## 🛑 El Porqué: Justificación y Problemática en Lima
 
-### Dijkstra (lo que usan los mapas convencionales)
+### La Falla Sistémica de las Apps Convencionales
+Las aplicaciones estándar de navegación comercial (**Google Maps, Waze, Apple Maps**) fueron concebidas bajo un paradigma estrictamente utilitario: **minimizar distancia o tiempo en automóvil**. En ciudades del primer mundo, donde los índices de seguridad son relativamente homogéneos, este enfoque es válido. 
 
-Dijkstra explora **todos los nodos** del grafo desde el origen, en todas las direcciones posibles, hasta llegar al destino. Garantiza encontrar el camino **más corto en distancia o tiempo**. El problema: no tiene ninguna noción de "dirección", es ciego hacia el destino. Para un mapa de Lima con ~80 nodos es manejable, pero en grafos reales de millones de intersecciones sería computacionalmente inviable en tiempo real.
+Sin embargo, **en Lima Metropolitana este enfoque resulta peligroso para la vida y el patrimonio de los ciudadanos**:
+- **El sesgo automovilístico:** Un algoritmo tradicional considera que una vía rápida como la Vía Expresa Paseo de la República o la Vía de Evitamiento es la ruta más "corta" y "rápida", sugiriéndosela a transeúntes a pie donde las veredas son inexistentes o están prohibidas para peatones.
+- **La trampa del atajo ciego:** Para recortar 200 metros o 3 minutos, un mapa convencional es capaz de guiar a un ciudadano o turista por jirones críticos con alto índice de criminalidad (como Jr. Gamarra en La Victoria, Jr. Cuzco en Mesa Redonda, o pasajes oscuros de Caquetá y Callao Centro).
+- **El robo al paso y el factor aglomeración:** Según reportes de la Policía Nacional del Perú (PNP) y el INEI (2024), más del 78% de los delitos patrimoniales contra transeúntes en Lima son **robos de teléfonos celulares y arrebatos al paso**. Estos delitos se concentran de forma desproporcionada en:
+  1. *Focos de aglomeración masiva y comercio informal* (donde el delincuente aprovecha el tumulto para escapar).
+  2. *Paraderos y gargantas viales saturadas* donde los peatones están indefensos esperando transporte público.
+  3. *Calles angostas y mal iluminadas con nula presencia de serenazgo*.
 
-### A\* (lo que usa LimaSegura)
-
-A\* agrega una **función heurística** `h(n)` que estima el costo restante desde cualquier nodo hasta el destino. Usamos la **distancia de Haversine** (distancia real entre coordenadas geográficas sobre la esfera terrestre) como heurística admisible (nunca sobreestima, por lo tanto A\* garantiza encontrar el óptimo). Esto hace que A\* explore primero los nodos que están geográficamente más cerca al destino, convergiendo hasta **10× más rápido** que Dijkstra.
-
-```
-f(n) = g(n) + h(n)
-
-g(n) = costo real acumulado desde el origen hasta n
-       (distancia física + penalización de peligro acumulada)
-
-h(n) = distancia de Haversine desde n hasta el destino
-       (heurística admisible: nunca sobreestima el costo real)
-```
-
-### El Factor de Aglomeración Lima 2026
-
-El costo de cada arista del grafo no es solo la distancia física. Se calcula como:
-
-```
-costo(arista) = distanciaKm × (1 + penalizacionSeguridad + penalizacionAglomeracion)
-
-penalizacionSeguridad   = suma de pesos de incidentes activos (robos, accidentes,
-                           zonas peligrosas) dentro de 500m del arco
-penalizacionAglomeracion = factor de densidad de hotspots × intensidad por hora
-
-Parámetros del solver:
-  safetyWeight      = 1.5   (cuánto pondera zonas de riesgo reportadas)
-  aglomerationWeight = 5.0  (cuánto pondera la densidad peatonal)
-```
-
-Esto significa que A\* puede elegir una ruta 30% más larga en kilómetros si esa ruta evita zonas con 200% más riesgo. El usuario ve ambas opciones (activando el checkbox de comparación) y entiende el tradeoff directamente en el mapa.
+### La Misión de LimaSegura
+**LimaSegura 2026** no busca únicamente llevar al usuario del punto A al punto B en el menor tiempo. Su objetivo central es **optimizar el balance entre tiempo de viaje y protección personal**, garantizando que el camino trazado sobre el asfalto desvíe de manera proactiva las zonas de alta incidencia delictiva, focos de aglomeración crítica y obras no transitables.
 
 ---
 
-## 🗺️ Grafo de Lima
+## 🧩 El De Qué: Fundamentos y Arquitectura Técnica
 
-El grafo está en `src/data/limaGraph.ts` y cubre los principales corredores de la ciudad:
+LimaSegura 2026 es una aplicación web progresiva (PWA) de alto rendimiento que opera en el navegador del usuario en tiempo real (< 5 milisegundos de tiempo de cómputo algorítmico).
 
-| Zona | Nodos incluidos |
-|------|----------------|
-| Centro Histórico | Plaza Mayor, La Victoria, Cercado |
-| Miraflores | Larcomar, Óvalo Miraflores, Kennedy |
-| San Isidro | CC El Golf, Conquistadores, Javier Prado |
-| La Molina | Av. La Molina, Mall Molina Plaza |
-| Surco / Barranco | Bulevar, Plaza Barranco |
-| SJL | Metro SJL, Bayóvar, Canto Grande |
-| Callao | Bellavista, Terminal Marítimo |
-| La Victoria | Gamarra, Estación La Cultura, Av. Aviación |
-| Ate / Santa Anita | Huancayo, Estadio Monumental |
-| Comas / Los Olivos | Metropolitano Norte, Plaza Comas |
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        FLUJO DE PROCESAMIENTO                          │
+└────────────────────────────────────────────────────────────────────────┘
+  1. Origen & Destino fijados (GPS o Tap en Mapa interactivo)
+            │
+            ▼
+  2. Motor A* Multicriterio con MinPriorityQueue en O(log V)
+     Evaluación de la función: f(n) = g(n) + h(n)
+     * g(n): Distancia acumulada ponderada por penalización de peligro
+     * h(n): Distancia esférica Haversine admisible
+            │
+            ▼
+  3. Extractor de Waypoints del Corredor Seguro
+     Identifica los puntos de inflexión del desvío inteligente
+            │
+            ▼
+  4. OSRM API (OpenStreetMap Routing Machine)
+     Proyecta los waypoints sobre la geometría real de las calles
+     (con perfil vehicular o peatonal según corresponda)
+            │
+            ▼
+  5. Renderizado en Capas Leaflet + Panel Comparativo + Guía Paso a Paso
+```
 
-Cada nodo tiene coordenadas reales (lat/lng), distrito y nombre. Cada arista tiene distanciaKm real, streetName y tipo de vía.
+### Componentes de la Arquitectura
+
+1. **Topología de Nodos y Aristas Metropolitanas (`src/data/limaGraph.ts`):**  
+   Una red bidireccional que conecta más de 40 nodos clave de Lima Metropolitana (Centro Histórico, Callao, San Miguel, Lima Norte, San Juan de Lurigancho, Santa Anita, La Molina, Miraflores, Barranco y Lima Sur). Cada arco clasifica la vía según su naturaleza (`peatonal`, `jiron`, `calle`, `avenida`, `via_expresa`, `via_rapida`).
+2. **Motor Algorítmico Puro A\* (`src/utils/algorithms.ts`):**  
+   Implementación desde cero con cola de prioridad Min-Heap (`MinPriorityQueue`). Evita recorrer listas lineales $O(V)$, logrando una velocidad de respuesta instantánea.
+3. **Módulo de Geometría Real (`src/utils/osrm.ts`):**  
+   Conexión con el servidor público de OSRM para trazar las polilíneas exactas siguiendo curvas, veredas y carriles de OpenStreetMap.
+4. **Geocodificación Inversa Resiliente (`src/utils/geocoding.ts`):**  
+   Integración con Nominatim con rate-limiting (1.1 seg) y memoria caché para convertir coordenadas a nombres de calle reales sin saturar las APIs públicas.
 
 ---
 
-## 🔧 Arquitectura técnica
+## 🎛️ El Botón "Mostrar ruta directa para comparar"
 
-```
-src/
-├── App.tsx                    # Orquestador: estado global, flujo de 3 pasos
-├── types.ts                   # Interfaces TypeScript (GraphNode, RouteResult, etc.)
-├── index.css                  # Sistema de diseño (vars CSS, dark mode, responsive)
-│
-├── components/
-│   ├── MapContainer.tsx       # Mapa Leaflet: rutas, riesgos, marcadores arrastrables
-│   ├── GuidedTour.tsx         # Onboarding paso a paso
-│   ├── FavoritesPanel.tsx     # Rutas guardadas en localStorage
-│   └── IncidentReporter.tsx   # Reporte de incidentes
-│
-├── utils/
-│   ├── algorithms.ts          # A*, Dijkstra, MinPriorityQueue, heurísticas
-│   ├── geocoding.ts           # Reverse geocoding Nominatim (OSM)
-│   └── osrm.ts                # OSRM: trazado sobre calles reales
-│
-└── data/
-    └── limaGraph.ts           # Grafo: nodos, aristas, hotspots, incidentes iniciales
-```
+### ¿Para qué sirve y por qué es fundamental?
+Muchos usuarios dudan de una ruta segura si no pueden contrastarla con lo que harían normalmente:  
+> *"¿Por qué la aplicación me hace dar esta vuelta? ¿Realmente vale la pena caminar 3 cuadras más?"*
 
-### Flujo de una consulta
+El botón **"Mostrar ruta directa en el mapa para comparar"** resuelve esta duda de forma empírica y visual:
 
-```
-1. Usuario toca el mapa (elige origen y destino)
-           ↓
-2. A* con Factor de Aglomeración Lima 2026
-   (< 5ms, sincrónico, en el navegador)
-           ↓
-3. OSRM API pública
-   Recibe los waypoints del corredor seguro de A*
-   y los proyecta sobre calles reales de OSM
-   (~500ms–2s según latencia de red)
-           ↓
-4. Mapa dibuja la ruta en verde + panel de resultados
-   Instrucciones paso a paso generadas desde los arcos
-   del grafo (con alertas ⚠️ en tramos de riesgo)
-```
+1. **Calcula de forma independiente la Ruta Convencional Directa (Dijkstra sin penalización):**
+   - Emplea el algoritmo que usaría un GPS común: busca ciegamente la mínima distancia física entre A y B, ignorando por completo zonas rojas de asaltos, aglomeraciones o peligro.
+2. **Superposición Visual de Alto Contraste en el Mapa:**
+   - 🟢 **Ruta Segura (A\*):** Línea verde esmeralda sólida (`#2DD4A0`), gruesa, trazada por el corredor protegido.
+   - 🔴 **Ruta Convencional Directa:** Línea carmesí punteada (`#F43F5E`), trazada cortando en línea recta y **atravesando los círculos rojos de peligro**.
+   - **Leyenda Interactiva:** Al pie del mapa se despliega una tarjeta de leyenda que explica exactamente qué representa cada color.
+3. **Panel Comparativo Cuantitativo:**
+   Al activar la casilla, el panel lateral despliega un análisis comparativo frente a frente:
+   - **Métricas:** Distancia en km, tiempo estimado en minutos y score de seguridad (0 a 100%).
+   - **Veredicto Explícito:** Si la ruta segura rodea un foco de peligro, el sistema cuantifica el trade-off:
+     > *"Veredicto: La ruta protegida requiere 0.5 km adicionales a cambio de ganar un +65% de protección frente a robos y aglomeraciones."*
+   - Si no existen peligros en el trayecto directo, el sistema lo informa transparentemente:
+     > *"Veredicto: No se detectaron zonas críticas ni aglomeraciones en la vía directa para este trayecto. Ambos recorridos son seguros."*
 
 ---
 
-## 🎛️ Funcionalidades
+## 🚶 Modo a Pie (Caminata) vs Modo Vehicular
 
-### Navegación y cálculo
+Un error fatal en aplicaciones urbanas es asumir que un auto y un peatón se comportan igual. En LimaSegura, el modo caminata transforma las reglas del cálculo de ruta:
 
-| Feature | Descripción |
-|---------|-------------|
-| Selección origen/destino | Tap en mapa o GPS del dispositivo |
-| Marcadores arrastrables | Al soltar, limpia la ruta anterior y recalcula |
-| A\* ruta segura | Evita zonas de riesgo e incidentes activos |
-| **Ruta directa (comparación)** | **Checkbox que activa Dijkstra sin penalización de seguridad — traza ruta gris punteada sobre el mapa junto a la verde segura** |
-| Instrucciones paso a paso | Con alertas ⚠️ cuando el tramo cruza zona peligrosa |
-| OSRM calles reales | La ruta se dibuja por vías reales, no líneas rectas |
-| Geocoding inverso | Nombre de calle real al tocar cualquier punto |
+| Criterio | Modo Vehicular (Auto / Taxi) | Modo a Pie (Caminata Peatonal) |
+| :--- | :--- | :--- |
+| **Vías Rápidas / Expresas** | Transitables y preferidas (`via_expresa`, `via_rapida`) | **Prohibidas:** Penalización del 1500% en el grafo (las evita completamente) |
+| **Sensibilidad a Aglomeración** | Moderada ($1.0\times$): el conductor está dentro del auto | **Extrema ($2.8\times$):** El peatón está físicamente expuesto al arrebato y al tumulto |
+| **Preferencia de Calles** | Avenidas anchas de alta capacidad vehicular | Jirones peatonales, veredas, parques y calles tranquilas (bonificación del 15%) |
+| **Perfil OSRM** | `profile: 'driving'` (respeta sentidos de tránsito y autopistas) | `profile: 'walking'` (rutas peatonales, veredas, cruces peatonales) |
+| **Métricas Ergonómicas** | Velocidad promedio de tráfico y distancia vehicular | Pasos estimados (1,300 pasos/km), calorías (65 kcal/km) y ritmo regulable |
 
-### Sobre el botón "Mostrar ruta directa para comparar"
-
-Este checkbox activa una comparación visual **sin borrar la ruta segura**:
-- Ejecuta **Dijkstra** desde el mismo origen al mismo destino, ignorando penalizaciones de seguridad
-- Traza esa ruta en **gris punteado** en el mapa
-- La ruta segura de A\* permanece en **verde sólido** encima
-- El panel de resultado muestra `+X% más segura que la ruta directa`
-
-Esto permite entender visualmente **exactamente dónde y cuánto rodea** la ruta segura, y por qué.
-
-> **Nota (v2.3):** Antes de esta versión el checkbox recalculaba todo desde cero, borrando la ruta segura y volviéndola a dibujar, lo que lo hacía parecer inútil (el mapa parpadeaba y el resultado era el mismo). Ahora solo calcula la ruta de comparación de forma independiente y la superpone.
-
-### Modos
-
-| Modo | Descripción |
-|------|-------------|
-| 🚶 Caminata | Métricas para ir a pie: pasos, calorías, hora de llegada estimada |
-| 🌙 Noche | Tema oscuro para uso nocturno |
-| ⚠️ Zonas de riesgo | Capa visual de hotspots y densidades de aglomeración |
-| 🔖 Favoritos | Guardar y cargar rutas frecuentes (localStorage, persiste entre sesiones) |
+### Ritmos de Caminata Configurables
+- 🚶 **Tranquilo (3.5 km/h):** Para adultos mayores, personas con niños o paso pausado.
+- 🚶‍♂️ **Normal (5.0 km/h):** Velocidad media estándar de un transeúnte urbano.
+- 🏃 **Rápido (7.0 km/h):** Paso acelerado o trote ligero para traslados con prisa.
 
 ---
 
-## ⚙️ Configuración de despliegue
+## 🗺️ Cobertura Geográfica y Contexto Peruano
 
-### No se requieren API keys
+El grafo y la base de incidentes de LimaSegura incorporan la realidad topográfica y social de Lima Metropolitana:
 
-La app usa únicamente servicios públicos y gratuitos:
-- **OSRM** (`router.project-osrm.org`) — gratuito, sin key, máximo recomendado 1 req/seg
-- **Nominatim OSM** (`nominatim.openstreetmap.org`) — gratuito, requiere `User-Agent` en cada petición (bloquea con HTTP 403 si no se envía)
+### Zonas Críticas y Hotspots Modelados
+1. **Emporio Comercial Gamarra (La Victoria):**  
+   Mayor centro textil de Sudamérica. Alta aglomeración diurna (factor 95%), pasajes saturados de transeúntes y carterismo en accesos a Jr. Gamarra y Av. Aviación.
+2. **Mesa Redonda & Mercado Central (Cercado de Lima):**  
+   Foco comercial masivo de alta densidad. Pasajes estrechos, carretillas, congestión crítica y alto índice de hurtos al paso.
+3. **Callao Centro & Puerto del Callao (Callao):**  
+   Zona histórica con zonas rojas adyacentes a Jr. Constitución, Av. Sáenz Peña y Bellavista, con presencia documentada de microtráfico y asaltos.
+4. **Puente Nuevo / El Agustino / Evitamiento:**  
+   Garganta de conexión Lima Este con Cercado. Arrebatos de celulares en paraderos y escaleras de acceso a la autopista.
+5. **Caquetá, Habich y Zarumilla (Rímac / SMP):**  
+   Paraderos de transporte público de alta congestión norteña con incidencia frecuente de robos en horas pico.
+6. **Estaciones Críticas de Metro Línea 1 y Metropolitano:**  
+   Estación Gamarra, La Cultura, Central, Naranjal, Atocongo y Caja de Agua.
+7. **Óvalo Santa Anita / Carretera Central (Ate / Santa Anita):**  
+   Punto neurálgico de comercio ambulatorio masivo, transporte interprovincial y saturación peatonal.
 
-### `vercel.json` — Por qué es crítico
-
-```json
-{
-  "headers": [
-    {
-      "source": "/(sw.js|registerSW.js|manifest.webmanifest|manifest.json)",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
-    },
-    {
-      "source": "/assets/(.*)",
-      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
-    }
-  ]
-}
-```
-
-Sin este archivo, la CDN de Vercel cachea el Service Worker (`sw.js`) por horas o días. Esto significa que cuando despliegas una nueva versión, los usuarios siguen viendo la versión vieja porque su navegador no sabe que el SW cambió. Con `no-cache` en el SW, cada visita verifica si hay una versión nueva.
-
-Los archivos de `/assets/` sí deben cachearse con `immutable` porque Vite les genera un hash en el nombre (ejemplo: `index-oKAmGgzy.js`). Si el contenido cambia, el nombre también cambia, por lo que nunca habrá conflicto.
+### Red de Refugios Seguros (Safe Havens)
+La aplicación cuenta con marcadores y contactos de emergencia directos para:
+- **Hospitales de Referencia:** Hospital Edgardo Rebagliati (Jesús María), Hospital Arzobispo Loayza (Cercado), Hospital Casimiro Ulloa (Miraflores).
+- **Comisarías PNP:** Alfonso Ugarte, Miraflores, San Isidro, Callao.
+- **Compañías de Bomberos:** Cía. Roma N° 2 (Cercado), Bomberos Miraflores N° 28.
 
 ---
 
-## 🚀 Desarrollo local
+## 🧮 Formulación Matemática y Algoritmos
+
+### 1. Función de Evaluación A\*
+
+$$f(n) = g(n) + h(n)$$
+
+Donde:
+- **$g(n)$** es el costo real acumulado desde el nodo de origen hasta el nodo actual $n$.
+- **$h(n)$** es la estimación heurística admisible desde $n$ hasta el destino.
+
+### 2. Heurística Admisible: Distancia de Haversine
+Para garantizar que A\* encuentre **siempre el camino óptimo**, la heurística $h(n)$ nunca debe sobreestimar el costo real ($h(n) \le h^*(n)$). Se utiliza la distancia esférica de Haversine:
+
+$$\Delta\sigma = 2 \arcsin \left( \sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos\phi_1 \cos\phi_2 \sin^2\left(\frac{\Delta\lambda}{2}\right)} \right)$$
+
+$$h(n) = R \cdot \Delta\sigma \quad (R \approx 6371 \text{ km})$$
+
+Dado que la distancia en línea recta sobre la Tierra es siempre menor o igual a cualquier camino transitable por calles, la heurística es **estrictamente admisible y consistente**.
+
+### 3. Función de Costo Multicriterio del Arco
+
+Para cada arista dirigida $(u, v)$ de longitud física $d(u, v)$:
+
+$$c(u, v) = d(u, v) \cdot \mu_{\text{tipo}} \cdot \left[ 1 + \left( w_{\text{aglom}} \cdot P_{\text{aglom}}(v) + w_{\text{seg}} \cdot P_{\text{incidente}}(v) \right) \cdot \mu_{\text{peatón}} \right]$$
+
+- **$\mu_{\text{tipo}}$ (Multiplicador de tipo de vía):**  
+  En modo peatonal, $\mu_{\text{tipo}} = 15.0$ si la vía es rápida o expresa, $0.85$ si es jiron/calle peatonal, y $1.0$ en general.
+- **$P_{\text{aglom}}(v)$ (Penalización por radio de aglomeración):**  
+  Con decaimiento de potencia cuadrática para repeler rutas cercanas al centroide del tumulto:
+  $$P_{\text{aglom}}(v) = \sum_{k \in \text{Hotspots}} \left( 1 - \frac{\text{dist}(v, k)}{R_k} \right)^{1.8} \cdot \text{Factor}_k$$
+- **$P_{\text{incidente}}(v)$ (Penalización de incidentes y zonas peligrosas):**  
+  Ponderación por severidad: Crítica ($6.0\times$), Alta ($3.5\times$), Moderada ($1.8\times$).
+- **$\mu_{\text{peatón}}$ (Multiplicador peatonal):**  
+  $2.8\times$ en modo caminata, $1.0\times$ en modo vehicular.
+
+---
+
+## 🚀 Instalación y Despliegue
+
+### Requisitos Previos
+- **Node.js:** Versión 18 o superior
+- **npm:** Versión 9 o superior
+
+### Pasos para Ejecución Local
 
 ```bash
-# Instalar dependencias
+# 1. Clonar el repositorio
+git clone https://github.com/tu-usuario/limasegura-2026.git
+cd limasegura-2026
+
+# 2. Instalar dependencias
 npm install
 
-# Servidor de desarrollo (Vite HMR)
+# 3. Iniciar el servidor de desarrollo (Vite)
 npm run dev
 
-# Verificar tipos TypeScript sin compilar
+# 4. Verificar integridad de tipos TypeScript
 npx tsc --noEmit
 
-# Build de producción
+# 5. Compilar para producción
 npm run build
 
-# Preview del build generado en dist/
+# 6. Probar bundle generado
 npm run preview
 ```
 
----
+### Servicios Públicos Utilizados (Cero Costo de APIs)
+- **OSRM (Open Source Routing Machine):** `https://router.project-osrm.org` (enrutamiento libre sobre OpenStreetMap).
+- **Nominatim Geocoding:** `https://nominatim.openstreetmap.org` (geocodificación inversa con User-Agent y rate limiter estricto).
 
-## 📦 Stack técnico
-
-| Librería | Uso |
-|----------|-----|
-| React 19 + TypeScript 5 | UI reactiva con tipado estático |
-| Vite 6 | Bundler, HMR, plugin PWA |
-| Leaflet 1.9 | Mapa interactivo, polilíneas, marcadores |
-| Framer Motion 11 | Animaciones de paneles y transiciones |
-| Lucide React | Iconografía consistente |
-| vite-plugin-pwa | Genera Service Worker y manifest automáticamente |
-| OSRM API pública | Trazado de calles reales sobre OSM |
-| Nominatim API | Reverse geocoding (coordenadas → nombre de calle) |
-
----
-
-## 📊 Detalles de algoritmos
-
-### `MinPriorityQueue` (heap binario)
-Implementada desde cero en `src/utils/algorithms.ts`. Es la estructura central que hace eficiente a A\*: siempre extrae el nodo con menor `f(n)` en `O(log n)`. Sin esta estructura, A\* degeneraría a `O(n²)`.
-
-### `solveRoute(originId, destId, nodes, edges, hotspots, incidents, algorithm, safetyWeight, aglomerationWeight)`
-
-Parámetros clave:
-- `algorithm: 'astar_safe' | 'dijkstra'` — modo de búsqueda
-- `safetyWeight` — multiplicador para penalizaciones de incidentes (recomendado: 1.5)
-- `aglomerationWeight` — multiplicador para densidad peatonal (recomendado: 5.0)
-
-Retorna `RouteResult` con:
-- `pathNodes` — nodos del camino
-- `totalDistanceKm` — distancia física
-- `safetyScore` — 0-100%, donde 100 = sin riesgo detectado
-- `stepByStepDirections` — instrucciones con `warning` opcional
-
-### `reverseGeocodeStreet(lat, lng)` en `geocoding.ts`
-
-Nominatim requiere por política:
-- Header `User-Agent` identificando la aplicación (sin esto: HTTP 403 inmediato)
-- Máximo 1 petición por segundo (sin esto: HTTP 429 rate limit)
-
-La función implementa caché en memoria (Map) para no re-consultar la misma posición (redondeada a 4 decimales ≈ 11m de precisión) y un rate-limiter de 1100ms entre peticiones.
-
----
-
-## 📝 Changelog
-
-### v2.3 — 19 Sep 2026 — Fixes críticos
-- `vercel.json` con headers de caché correctos para PWA
-- Eliminado tag `<link rel="manifest">` duplicado en `index.html`
-- `geocoding.ts`: `User-Agent` obligatorio + rate-limiter 1100ms (corrige HTTP 403/429)
-- Favoritos auto-calculan la ruta al cargar (sin necesitar presionar Calcular de nuevo)
-- `swapPoints` recalcula la ruta inversa automáticamente
-- Modo caminata 🚶 recalcula con perfil correcto
-- **Checkbox "Mostrar ruta directa": CORREGIDO** — ahora superpone la ruta directa sin borrar la segura
-- Marcadores arrastrables limpian la ruta fantasma inmediatamente
-- Grafo: conectados arcos faltantes Av. Aviación (Gamarra ↔ La Cultura) + Higuereta → Bulevar
-- Instrucciones paso a paso muestran advertencias ⚠️ en tramos peligrosos
-
-### v2.2 — 17 Sep 2026
-- Modal de tour centrado correctamente (conflicto con Framer Motion)
-- Soporte tecla Escape para cerrar tour
-- Inicialización no bloqueante del tour (opt-in)
-
-### v2.1 — 16 Sep 2026
-- Modo caminata con pasos, calorías y hora de llegada
-- Panel de incidentes en tiempo real
-- Dark mode persistente
-
-### v2.0 — 15 Sep 2026
-- Rediseño completo con sistema de diseño CSS
-- Layout responsive (mobile/tablet/desktop)
-- Integración OSRM (reemplaza líneas rectas)
-- Factor de Aglomeración Lima 2026
-
-### v1.0 — Sep 2026
-- A\* y Dijkstra sobre grafo de Lima
-- Mapa Leaflet básico + cálculo de seguridad estático
+### Configuración Crítica de Caché PWA (`vercel.json`)
+Para evitar que los Service Workers antiguos queden cacheados por los navegadores tras una actualización, el archivo `vercel.json` estipula:
+- `no-cache, no-store, must-revalidate` para `sw.js` y `manifest.webmanifest`.
+- `max-age=31536000, immutable` para los bundles versionados en `/assets/`.
 
 ---
 
 ## 📚 Referencias
 
-- Hart, P. E., Nilsson, N. J., & Raphael, B. (1968). *A formal basis for the heuristic determination of minimum cost paths.* IEEE Transactions on Systems Science and Cybernetics.
-- Dijkstra, E. W. (1959). *A note on two problems in connexion with graphs.* Numerische Mathematik.
-- OpenStreetMap Foundation. *Nominatim Usage Policy.* https://operations.osmfoundation.org/policies/nominatim/
-- Project OSRM. *Open Source Routing Machine.* http://project-osrm.org/
-- INEI (2024). *Lima Metropolitana: Densidad Poblacional por Distritos 2024.*
+1. **Hart, P. E., Nilsson, N. J., & Raphael, B. (1968).** *A formal basis for the heuristic determination of minimum cost paths.* IEEE Transactions on Systems Science and Cybernetics, 4(2), 100-107.
+2. **Dijkstra, E. W. (1959).** *A note on two problems in connexion with graphs.* Numerische Mathematik, 1(1), 269-271.
+3. **Instituto Nacional de Estadística e Informática (INEI - 2024).** *Estadísticas de Seguridad Ciudadana y Victimización en Lima Metropolitana.*
+4. **Policía Nacional del Perú (PNP - 2024).** *Mapa del Delito e Incidencia de Hurtos y Robos al Paso por Distritos de Lima y Callao.*
+5. **OpenStreetMap Foundation.** *OSRM & Nominatim Technical Architecture & Usage Policies (2024).*
 
 ---
 
 ## 📄 Licencia
 
-MIT — Proyecto académico LimaSegura 2026
-Universidad — Algoritmos de Búsqueda y Factor de Aglomeración
+Este proyecto está licenciado bajo los términos de la Licencia MIT.  
+Desarrollado como proyecto académico de Algoritmos de Búsqueda y Factor de Aglomeración — Lima Metropolitana 2026.

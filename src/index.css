@@ -674,6 +674,104 @@ html.light-mode .leaflet-control-attribution {
   cursor: pointer;
 }
 
+/* ── Panel comparativo de rutas (A* vs Convencional) ────────── */
+.ls-comparison-card {
+  margin-top: 0.875rem;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.ls-comparison-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #94a3b8;
+}
+
+.ls-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.625rem;
+}
+
+.ls-comp-col {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 0.625rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ls-comp-col.safe {
+  border-color: rgba(45, 212, 160, 0.35);
+  background: rgba(45, 212, 160, 0.05);
+}
+
+.ls-comp-col.direct {
+  border-color: rgba(244, 63, 94, 0.35);
+  background: rgba(244, 63, 94, 0.05);
+}
+
+.ls-comp-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #2DD4A0;
+}
+
+.ls-comp-badge.direct {
+  color: #f43f5e;
+}
+
+.ls-comp-val {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.ls-comp-sub {
+  font-size: 0.75rem;
+}
+
+.ls-comp-desc {
+  font-size: 0.6875rem;
+  color: var(--text-3);
+  line-height: 1.35;
+  margin-top: 0.2rem;
+}
+
+.ls-comp-verdict {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 0.5rem 0.625rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-2);
+}
+
+.ls-comp-verdict svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.text-emerald {
+  color: #2DD4A0;
+}
+
 /* ── Walking mode ─────────────────────────────────────────────── */
 .ls-walk-banner {
   display: flex;

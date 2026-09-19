@@ -205,7 +205,9 @@ export function solveRoute(
   incidents: RiskIncident[],
   algorithm: AlgorithmType,
   crowdRadiusMultiplier: number = 1.0,
-  crowdAvoidanceWeight: number = 2.5
+  crowdAvoidanceWeight: number = 2.5,
+  /** When true: heavily penalizes vias_rapidas + increases crowd/safety sensitivity for pedestrians */
+  walkingMode: boolean = false
 ): RouteResult | null {
   const startTime = performance.now();
   const nodeMap = new Map<string, GraphNode>();
@@ -285,6 +287,12 @@ export function solveRoute(
       // Base edge cost is real distance in km
       let edgeWeight = neighbor.distanceKm;
 
+      // Penalización estricta de vías no caminables en modo peatonal
+      // Vías expresas y rápidas (Paseo de la República, Evitamiento, Panamericana) son prohibidas/peligrosas para peatones
+      if (walkingMode && (neighbor.edgeType === 'via_rapida' || neighbor.edgeType === 'via_expresa' || neighbor.edgeType === 'autopista')) {
+        edgeWeight *= 15.0; // 1500% de penalización → el algoritmo buscará cualquier vía transitable a pie
+      }
+
       // In safe mode, we penalize paths traversing inside the crowd radius or near risk incidents
       if (algorithm === 'astar_safe') {
         const crowdEval = evaluateCrowdPenalty(
@@ -299,9 +307,24 @@ export function solveRoute(
           incidents
         );
 
+        // En modo peatonal:
+        // 1. Mayor sensibilidad a aglomeraciones y robos (un peatón no tiene blindaje ni velocidad de auto)
+        // 2. Bonificación para jirones, calles y pasajes peatonales más tranquilos
+        const pedestrianMultiplier = walkingMode ? 2.8 : 1.0;
+
+        if (walkingMode) {
+          if (neighbor.edgeType === 'peatonal' || neighbor.edgeType === 'jiron' || neighbor.edgeType === 'calle') {
+            edgeWeight *= 0.85; // Favorece vías peatonales seguras
+          } else if (neighbor.edgeType === 'avenida') {
+            edgeWeight *= 1.20; // Avenidas de alto tráfico vehicular son menos cómodas a pie
+          }
+        }
+
         // Multi-criteria cost function: distance amplified by crowd penalty factor
-        const crowdMultiplier = 1 + (crowdEval.penalty * crowdAvoidanceWeight) + (incidentEval.penalty * 2.0);
-        edgeWeight = neighbor.distanceKm * crowdMultiplier;
+        const crowdMultiplier = 1
+          + (crowdEval.penalty * crowdAvoidanceWeight * pedestrianMultiplier)
+          + (incidentEval.penalty * 2.0 * pedestrianMultiplier);
+        edgeWeight = edgeWeight * crowdMultiplier;
       }
 
       const tentativeG = (gScore.get(currentId) ?? Infinity) + edgeWeight;

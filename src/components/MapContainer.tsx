@@ -280,11 +280,14 @@ export const MapContainer: React.FC<Props> = ({
     const safeCoords  = safeStreetCoords  ?? buildFallbackCoords(safeRoute, originPoint, destPoint);
     const directCoords = stdStreetCoords ?? (standardRoute ? buildFallbackCoords(standardRoute, originPoint, destPoint) : null);
 
-    // Standard / direct route — dashed gray, drawn first (below)
+    // Standard / direct route — visible dashed crimson, drawn beneath safe route
     if (directCoords && directCoords.length > 1) {
+      const stdTooltip = standardRoute
+        ? `⚠️ Ruta Directa Convencional · ${standardRoute.totalDistanceKm.toFixed(1)} km · Seguridad ${Math.round(standardRoute.safetyScore)}%`
+        : '⚠️ Ruta Directa Convencional (Sin protección)';
       L_stdRoute.current = L.polyline(directCoords, {
-        color: '#64748b', weight: 3, opacity: 0.45, dashArray: '8,6',
-      }).addTo(map).bindTooltip('Ruta directa sin optimización de seguridad', { sticky: true });
+        color: '#f43f5e', weight: 4, opacity: 0.85, dashArray: '8,8',
+      }).addTo(map).bindTooltip(stdTooltip, { sticky: true });
     }
 
     // Safe route — solid green, on top
@@ -298,8 +301,11 @@ export const MapContainer: React.FC<Props> = ({
           { sticky: true }
         );
 
-      // Fit map to show full route with padding
-      const allBounds = L.latLngBounds(safeCoords);
+      // Fit map to show full route (including direct route if present) with padding
+      const allCoords = directCoords && directCoords.length > 1
+        ? [...safeCoords, ...directCoords]
+        : safeCoords;
+      const allBounds = L.latLngBounds(allCoords);
       map.fitBounds(allBounds, { padding: [50, 50], maxZoom: 16 });
     }
   }, [safeRoute, standardRoute, safeStreetCoords, stdStreetCoords, originPoint, destPoint]);
@@ -345,6 +351,37 @@ export const MapContainer: React.FC<Props> = ({
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
+
+      {/* Floating comparison legend when both routes are displayed */}
+      {safeRoute && standardRoute && (
+        <div style={{
+          position: 'absolute', bottom: 24, left: 16,
+          zIndex: 1000,
+          background: 'rgba(15, 23, 42, 0.92)',
+          backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          borderRadius: 8,
+          padding: '10px 14px',
+          color: '#f8fafc',
+          fontSize: '0.78rem',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+          display: 'flex', flexDirection: 'column', gap: 6,
+          pointerEvents: 'auto',
+          fontFamily: 'Inter, sans-serif'
+        }}>
+          <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            Comparación activa en mapa
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 20, height: 4, background: '#2DD4A0', borderRadius: 2, display: 'inline-block' }}></span>
+            <span><strong>Ruta Segura (A*)</strong>: Esquiva peligro</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 20, height: 4, background: '#f43f5e', borderTop: '2px dashed #f43f5e', display: 'inline-block' }}></span>
+            <span><strong>Ruta Directa</strong>: Cruza zonas de riesgo</span>
+          </div>
+        </div>
+      )}
 
       {banner && (
         <div style={{
