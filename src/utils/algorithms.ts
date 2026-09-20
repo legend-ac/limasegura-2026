@@ -160,6 +160,32 @@ export function evaluateIncidentPenalty(
   return { penalty, incidentWarning: warning };
 }
 
+/**
+ * Checks if a sequence of coordinates traverses within active crowd hotspots or high-severity incidents.
+ */
+export function isRouteExposedToRisk(
+  coordinates: [number, number][],
+  hotspots: CrowdHotspot[],
+  incidents: RiskIncident[],
+  crowdThreshold: number = 0.65
+): boolean {
+  for (const [lat, lng] of coordinates) {
+    for (const h of hotspots) {
+      if (h.crowdFactor >= crowdThreshold) {
+        const d = calculateDistanceMeters(lat, lng, h.lat, h.lng);
+        if (d < h.radiusMeters * 0.9) return true;
+      }
+    }
+    for (const inc of incidents) {
+      if (inc.active && (inc.severity === 'critica' || inc.severity === 'alta')) {
+        const d = calculateDistanceMeters(lat, lng, inc.lat, inc.lng);
+        if (d < inc.radiusMeters) return true;
+      }
+    }
+  }
+  return false;
+}
+
 interface AdjacencyEdge {
   toNodeId: string;
   distanceKm: number;

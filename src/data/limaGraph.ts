@@ -18,6 +18,9 @@ export const LIMA_NODES: GraphNode[] = [
   { id: 'node_parque_exposicion', name: 'Parque de la Exposición', lat: -12.0620, lng: -77.0365, district: 'Cercado de Lima', category: 'landmark' },
   { id: 'node_plaza_bolognesi', name: 'Plaza Bolognesi', lat: -12.0601, lng: -77.0422, district: 'Breña / Cercado', category: 'plaza' },
   { id: 'node_alfonso_ugarte', name: 'Av. Alfonso Ugarte / 28 de Julio', lat: -12.0645, lng: -77.0430, district: 'Breña', category: 'avenue' },
+  { id: 'node_brena_centro', name: 'Breña Centro (Jr. Huancabamba / Jr. Napo)', lat: -12.0595, lng: -77.0495, district: 'Breña', category: 'avenue' },
+  { id: 'node_brena_arica', name: 'Av. Arica con Jr. Aguarico', lat: -12.0585, lng: -77.0450, district: 'Breña', category: 'avenue' },
+  { id: 'node_brena_restauracion', name: 'Jr. Restauración con Jr. Huancabamba', lat: -12.0635, lng: -77.0510, district: 'Breña', category: 'calle' },
 
   // LA VICTORIA
   { id: 'node_plaza_manco_capac', name: 'Plaza Manco Cápac', lat: -12.0625, lng: -77.0275, district: 'La Victoria', category: 'plaza' },
@@ -29,6 +32,9 @@ export const LIMA_NODES: GraphNode[] = [
 
   // JESÚS MARÍA & LINCE
   { id: 'node_campo_de_marte', name: 'Campo de Marte', lat: -12.0685, lng: -77.0410, district: 'Jesús María', category: 'landmark' },
+  { id: 'node_jesus_maria_centro', name: 'Plaza San José / Jr. Arnaldo Márquez', lat: -12.0735, lng: -77.0460, district: 'Jesús María', category: 'plaza' },
+  { id: 'node_jesus_maria_cuba', name: 'Av. Cuba con Av. Horacio Urteaga', lat: -12.0720, lng: -77.0440, district: 'Jesús María', category: 'avenue' },
+  { id: 'node_jesus_maria_garzon', name: 'Av. Arnaldo Márquez con Jr. Zegarra', lat: -12.0775, lng: -77.0445, district: 'Jesús María', category: 'calle' },
   { id: 'node_rebagliati', name: 'Hospital Edgardo Rebagliati', lat: -12.0760, lng: -77.0398, district: 'Jesús María', category: 'emergency' },
   { id: 'node_parque_proceres', name: 'Parque de los Próceres / Salaverry', lat: -12.0785, lng: -77.0455, district: 'Jesús María', category: 'landmark' },
   { id: 'node_parque_castilla', name: 'Parque Mariscal Castilla', lat: -12.0865, lng: -77.0400, district: 'Lince', category: 'landmark' },
@@ -121,7 +127,22 @@ export const LIMA_EDGES: GraphEdge[] = [
   { from: 'node_gamarra_centro', to: 'node_estacion_gamarra', distanceKm: 0.22, streetName: 'Av. Aviación', type: 'avenida' },
   { from: 'node_gamarra_centro', to: 'node_via_expresa_mexico', distanceKm: 1.60, streetName: 'Av. México', type: 'avenida' },
 
-  // Corredor Arequipa & Jesús María
+  // Corredor Arequipa, Breña & Jesús María
+  { from: 'node_brena_centro', to: 'node_brena_arica', distanceKm: 0.50, streetName: 'Jr. Napo', type: 'calle' },
+  { from: 'node_brena_arica', to: 'node_plaza_bolognesi', distanceKm: 0.60, streetName: 'Av. Arica', type: 'avenida' },
+  { from: 'node_brena_centro', to: 'node_brena_restauracion', distanceKm: 0.45, streetName: 'Jr. Huancabamba', type: 'calle' },
+  { from: 'node_brena_restauracion', to: 'node_brasil_28_julio', distanceKm: 0.45, streetName: 'Jr. Restauración / Av. Brasil', type: 'calle' },
+  { from: 'node_brena_centro', to: 'node_brasil_28_julio', distanceKm: 0.85, streetName: 'Jr. Huancabamba / Av. Brasil', type: 'avenida' },
+  { from: 'node_brasil_28_julio', to: 'node_campo_de_marte', distanceKm: 0.85, streetName: 'Av. 28 de Julio', type: 'avenida' },
+  { from: 'node_brasil_28_julio', to: 'node_jesus_maria_cuba', distanceKm: 0.65, streetName: 'Av. Horacio Urteaga', type: 'avenida' },
+  { from: 'node_brasil_28_julio', to: 'node_jesus_maria_centro', distanceKm: 0.75, streetName: 'Jr. Arnaldo Márquez', type: 'calle' },
+  { from: 'node_jesus_maria_cuba', to: 'node_jesus_maria_centro', distanceKm: 0.30, streetName: 'Av. Cuba', type: 'avenida' },
+  { from: 'node_jesus_maria_cuba', to: 'node_campo_de_marte', distanceKm: 0.45, streetName: 'Av. Cuba', type: 'avenida' },
+  { from: 'node_jesus_maria_centro', to: 'node_jesus_maria_garzon', distanceKm: 0.45, streetName: 'Jr. Arnaldo Márquez / Jr. Zegarra', type: 'calle' },
+  { from: 'node_jesus_maria_garzon', to: 'node_parque_proceres', distanceKm: 0.35, streetName: 'Jr. Coronel Cipriano Zegarra / Salaverry', type: 'calle' },
+  { from: 'node_jesus_maria_centro', to: 'node_parque_proceres', distanceKm: 0.55, streetName: 'Av. Cuba / Salaverry', type: 'avenida' },
+  { from: 'node_jesus_maria_centro', to: 'node_rebagliati', distanceKm: 0.70, streetName: 'Jr. Edgardo Rebagliati', type: 'calle' },
+  { from: 'node_jesus_maria_centro', to: 'node_pueblo_libre', distanceKm: 1.70, streetName: 'Av. San Felipe / Bolívar', type: 'avenida' },
   { from: 'node_campo_de_marte', to: 'node_rebagliati', distanceKm: 0.85, streetName: 'Av. Salaverry', type: 'avenida' },
   { from: 'node_rebagliati', to: 'node_parque_proceres', distanceKm: 0.70, streetName: 'Av. Salaverry', type: 'avenida' },
   { from: 'node_rebagliati', to: 'node_arequipa_canevaro', distanceKm: 0.95, streetName: 'Av. Edgardo Rebagliati / Canevaro', type: 'avenida' },

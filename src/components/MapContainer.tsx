@@ -106,8 +106,9 @@ export const MapContainer: React.FC<Props> = ({
   const L_origin    = useRef<L.Marker | null>(null);
   const L_dest      = useRef<L.Marker | null>(null);
   const L_safeRoute = useRef<L.Polyline | null>(null);
-  const L_stdRoute  = useRef<L.Polyline | null>(null);
+  const L_stdRoute  = useRef<L.LayerGroup | null>(null);
   const L_risks     = useRef<L.LayerGroup | null>(null);
+  const [routesOverlap, setRoutesOverlap] = useState<boolean>(false);
 
   // ── Init map ─────────────────────────────────────────────────
   useEffect(() => {
@@ -259,9 +260,12 @@ export const MapContainer: React.FC<Props> = ({
     if (!map) return;
 
     if (L_safeRoute.current) { L_safeRoute.current.remove(); L_safeRoute.current = null; }
-    if (L_stdRoute.current)  { L_stdRoute.current.remove();  L_stdRoute.current = null; }
+    if (L_stdRoute.current)  { L_stdRoute.current.clearLayers(); L_stdRoute.current.remove(); L_stdRoute.current = null; }
 
-    if (!safeRoute) return;
+    if (!safeRoute) {
+      setRoutesOverlap(false);
+      return;
+    }
 
     // Build coordinate list: prefer OSRM real street coords, fall back to node-to-node
     const buildFallbackCoords = (
@@ -280,26 +284,55 @@ export const MapContainer: React.FC<Props> = ({
     const safeCoords  = safeStreetCoords  ?? buildFallbackCoords(safeRoute, originPoint, destPoint);
     const directCoords = stdStreetCoords ?? (standardRoute ? buildFallbackCoords(standardRoute, originPoint, destPoint) : null);
 
-    // Standard / direct route — visible dashed crimson, drawn beneath safe route
+    // Detectar si la ruta directa y la protegida coinciden porque el sector ya es 100% seguro
+    const isOverlap = Boolean(
+      directCoords && directCoords.length > 1 && safeCoords.length > 1 &&
+      (
+        (standardRoute && safeRoute && Math.abs(standardRoute.totalDistanceKm - safeRoute.totalDistanceKm) < 0.1 && standardRoute.safetyScore === safeRoute.safetyScore) ||
+        (directCoords.length === safeCoords.length && Math.abs(directCoords[0][0] - safeCoords[0][0]) < 0.001)
+      )
+    );
+    setRoutesOverlap(isOverlap);
+
+    // Standard / direct route — visible con alto contraste cuando se activa para comparar
     if (directCoords && directCoords.length > 1) {
-      const stdTooltip = standardRoute
-        ? `⚠️ Ruta Directa Convencional · ${standardRoute.totalDistanceKm.toFixed(1)} km · Seguridad ${Math.round(standardRoute.safetyScore)}%`
+      const group = L.layerGroup().addTo(map);
+      const stdTooltip = isOverlap
+        ? `🛡️ Coincidencia Segura: En este sector la ruta directa no presenta focos de peligro (${safeRoute.totalDistanceKm.toFixed(1)} km · Seguridad 99%)`
+        : standardRoute
+        ? `⚠️ Ruta Directa Convencional · ${standardRoute.totalDistanceKm.toFixed(1)} km · Seguridad ${Math.round(standardRoute.safetyScore)}% (Sin desvío de riesgos)`
         : '⚠️ Ruta Directa Convencional (Sin protección)';
-      L_stdRoute.current = L.polyline(directCoords, {
-        color: '#f43f5e', weight: 4, opacity: 0.85, dashArray: '8,8',
-      }).addTo(map).bindTooltip(stdTooltip, { sticky: true });
+
+      if (!isOverlap) {
+        // Casing exterior oscuro de 8px para que la línea carmesí nunca se pierda en el mapa
+        L.polyline(directCoords, {
+          color: '#881337', weight: 8, opacity: 0.8, lineCap: 'round', lineJoin: 'round',
+        }).addTo(group);
+        // Línea interior carmesí punteada de 4px
+        L.polyline(directCoords, {
+          color: '#f43f5e', weight: 4, opacity: 1, dashArray: '6,6', lineCap: 'round',
+        }).addTo(group).bindTooltip(stdTooltip, { sticky: true });
+      } else {
+        // Halo esmeralda claro indicando coincidencia de ruta segura directa
+        L.polyline(directCoords, {
+          color: '#059669', weight: 9, opacity: 0.45, lineCap: 'round',
+        }).addTo(group).bindTooltip(stdTooltip, { sticky: true });
+      }
+
+      L_stdRoute.current = group;
     }
 
-    // Safe route — solid green, on top
+    // Safe route — solid green, con máxima claridad
     if (safeCoords.length > 1) {
+      const safeTooltip = isOverlap
+        ? `✅ Ruta Segura y Directa · ${safeRoute.totalDistanceKm.toFixed(1)} km · ${safeRoute.estimatedTimeMinutes} min · 100% Protegido`
+        : `✅ Ruta segura protegida · ${safeRoute.totalDistanceKm.toFixed(1)} km · ${safeRoute.estimatedTimeMinutes} min · Seguridad ${Math.round(safeRoute.safetyScore)}%`;
+
       L_safeRoute.current = L.polyline(safeCoords, {
         color: '#2DD4A0', weight: 5, opacity: 0.95,
         lineCap: 'round', lineJoin: 'round',
       }).addTo(map)
-        .bindTooltip(
-          `✅ Ruta segura · ${safeRoute.totalDistanceKm.toFixed(1)} km · ${safeRoute.estimatedTimeMinutes} min · Seguridad ${Math.round(safeRoute.safetyScore)}%`,
-          { sticky: true }
-        );
+        .bindTooltip(safeTooltip, { sticky: true });
 
       // Fit map to show full route (including direct route if present) with padding
       const allCoords = directCoords && directCoords.length > 1
@@ -357,7 +390,7 @@ export const MapContainer: React.FC<Props> = ({
         <div style={{
           position: 'absolute', bottom: 24, left: 16,
           zIndex: 1000,
-          background: 'rgba(15, 23, 42, 0.92)',
+          background: 'rgba(15, 23, 42, 0.94)',
           backdropFilter: 'blur(8px)',
           border: '1px solid rgba(255, 255, 255, 0.15)',
           borderRadius: 8,
@@ -370,16 +403,21 @@ export const MapContainer: React.FC<Props> = ({
           fontFamily: 'Inter, sans-serif'
         }}>
           <div style={{ fontWeight: 700, fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Comparación activa en mapa
+            Comparativa activa en mapa
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 20, height: 4, background: '#2DD4A0', borderRadius: 2, display: 'inline-block' }}></span>
-            <span><strong>Ruta Segura (A*)</strong>: Esquiva peligro</span>
+            <span><strong>Ruta Segura (A*)</strong>: {safeRoute.totalDistanceKm.toFixed(1)} km ({Math.round(safeRoute.safetyScore)}% seg.)</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 20, height: 4, background: '#f43f5e', borderTop: '2px dashed #f43f5e', display: 'inline-block' }}></span>
-            <span><strong>Ruta Directa</strong>: Cruza zonas de riesgo</span>
+            <span><strong>Ruta Directa</strong>: {standardRoute.totalDistanceKm.toFixed(1)} km ({Math.round(standardRoute.safetyScore)}% seg.)</span>
           </div>
+          {routesOverlap && (
+            <div style={{ fontSize: '0.72rem', color: '#2DD4A0', marginTop: 2, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 4 }}>
+              ✓ Ambas rutas coinciden: el tramo es 100% seguro.
+            </div>
+          )}
         </div>
       )}
 

@@ -157,7 +157,10 @@ export default function App() {
     );
   }, [nodes, handlePointSelected]);
 
-  const calculateRoute = useCallback(async (compare: boolean = compareConventional) => {
+  const calculateRoute = useCallback(async (
+    compare: boolean = compareConventional,
+    isWalking: boolean = walkingMode
+  ) => {
     if (!originPoint || !destPoint) return;
     setCalculating(true);
     setCalcError(null);
@@ -177,9 +180,9 @@ export default function App() {
       originPoint.nearestNode.id, destPoint.nearestNode.id,
       nodes, edges, hotspots, incidents,
       'astar_safe',
-      walkingMode ? 2.0 : 1.5,   // crowdRadiusMultiplier: radio mayor a pie
-      walkingMode ? 8.0 : 5.0,   // crowdAvoidanceWeight: peatón 8×, vehículo 5×
-      walkingMode                // activa penalización de vías rápidas + 2.8× sensibilidad
+      isWalking ? 2.0 : 1.5,   // crowdRadiusMultiplier: radio mayor a pie
+      isWalking ? 8.0 : 5.0,   // crowdAvoidanceWeight: peatón 8×, vehículo 5×
+      isWalking                // activa penalización de vías rápidas + 2.8× sensibilidad
     );
 
     if (!safe) {
@@ -191,7 +194,7 @@ export default function App() {
     // Ruta convencional para contraste solo si el usuario activó la comparación
     const direct = compare ? solveRoute(
       originPoint.nearestNode.id, destPoint.nearestNode.id,
-      nodes, edges, hotspots, incidents, 'dijkstra', 0.8, 0, walkingMode
+      nodes, edges, hotspots, incidents, 'dijkstra', 0.8, 0, isWalking
     ) : null;
 
     setSafeRoute(safe);
@@ -200,13 +203,14 @@ export default function App() {
 
     // ── 2. OSRM Calles Reales guiado por los waypoints seguros de A* ──
     const corridorWaypoints = extractCorridorWaypoints(safe.pathNodes);
-    const profile = walkingMode ? 'walking' : 'driving';
+    const profile = isWalking ? 'walking' : 'driving';
 
     const safeOsrmRoute = await fetchOsrmSafeCorridorRoute(
       originPoint.lat, originPoint.lng,
       destPoint.lat,   destPoint.lng,
       corridorWaypoints,
-      profile
+      profile,
+      { hotspots, incidents }
     );
 
     if (!safeOsrmRoute) {
@@ -360,15 +364,15 @@ export default function App() {
         </div>
 
         <div className="ls-header-actions">
-          {/* Modo caminata — recalcula la ruta si ya había una activa */}
+          {/* Modo caminata — recalcula la ruta inmediatamente con el perfil adecuado (a pie o vehículo) */}
           <button
             className={`ls-icon-btn ${walkingMode ? 'active walk-active' : ''}`}
             onClick={() => {
               const next = !walkingMode;
               setWalkingMode(next);
-              // Recalculate with new profile (walking/driving) if a route is active
+              // Recalcular inmediatamente con el nuevo perfil (a pie / vehículo)
               if (safeRoute && originPoint && destPoint) {
-                setTimeout(() => calculateRoute(compareConventional), 80);
+                calculateRoute(compareConventional, next);
               }
             }}
             title={walkingMode ? 'Desactivar modo caminata' : 'Activar modo caminata a pie'}
@@ -691,9 +695,9 @@ export default function App() {
                           </>
                         ) : (
                           <>
-                            <Info size={15} />
+                            <CheckCircle2 size={15} className="text-emerald" />
                             <span>
-                              <strong>Veredicto:</strong> No se detectaron zonas críticas ni aglomeraciones en la vía directa para este trayecto. Ambos recorridos son seguros.
+                              <strong>Veredicto:</strong> En este trayecto la vía directa ya es <strong>100% segura</strong> (libre de aglomeraciones y focos delictivos activos). Por ello, ambas rutas coinciden en distancia y recorrido óptimo.
                             </span>
                           </>
                         )}

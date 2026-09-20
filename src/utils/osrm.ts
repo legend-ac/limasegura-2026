@@ -1,3 +1,6 @@
+import { CrowdHotspot, RiskIncident } from '../types';
+import { isRouteExposedToRisk } from './algorithms';
+
 /**
  * OSRM Routing Client
  * Servidor público OSRM — 100% gratuito, sin API key
@@ -21,24 +24,46 @@ function parseRoute(route: any): OsrmRoute {
   return { coordinates, distanceKm, walkingMinutes };
 }
 
+
 /**
  * Obtiene la ruta de calles respetando los waypoints seguros calculados por A*.
- * Esto garantiza que el trazado sobre el asfalto rodee efectivamente las zonas de aglomeración.
+ * Si la ruta directa por asfalto/veredas ya está 100% libre de riesgos (no pasa por
+ * aglomeraciones ni incidentes), devuelve directamente la ruta óptima para no generar
+ * desvíos artificiales o innecesarios.
+ * Si la ruta directa atraviesa un foco de peligro, fuerza el paso por los waypoints seguros.
  */
 export async function fetchOsrmSafeCorridorRoute(
   originLat: number, originLng: number,
   destLat:   number, destLng:   number,
   waypoints: { lat: number; lng: number }[] = [],
-  profile: 'driving' | 'walking' = 'driving'
+  profile: 'driving' | 'walking' = 'driving',
+  hazardsCheck?: { hotspots: CrowdHotspot[]; incidents: RiskIncident[] }
 ): Promise<OsrmRoute | null> {
-  // If no intermediate waypoints, use standard 2-point fetch
-  if (!waypoints.length) {
-    const direct = await fetchOsrmRoute(originLat, originLng, destLat, destLng, { alternatives: false, profile });
-    return direct[0] ?? null;
+  // 1. Obtener la ruta directa como primera referencia
+  const directRoutes = await fetchOsrmRoute(originLat, originLng, destLat, destLng, { alternatives: false, profile });
+  const direct = directRoutes[0] ?? null;
+
+  // Si no hay waypoints intermedios, o si no se pudo calcular la ruta directa, retornar direct
+  if (!waypoints.length || !direct) {
+    return direct;
   }
 
+  // 2. Si se proporcionó verificación de peligros:
+  // Si la ruta directa por calles está 100% libre de aglomeraciones e incidentes,
+  // la ruta directa es la ruta más segura y eficiente (sin desvíos absurdos).
+  if (hazardsCheck) {
+    const isExposed = isRouteExposedToRisk(
+      direct.coordinates,
+      hazardsCheck.hotspots,
+      hazardsCheck.incidents
+    );
+    if (!isExposed) {
+      return direct;
+    }
+  }
+
+  // 3. La ruta directa cruza un foco de peligro: forzar el paso por los waypoints seguros de A*
   try {
-    // Build coordinate string: origin ; waypoint1 ; waypoint2 ; ... ; destination
     const coordParts = [
       `${originLng},${originLat}`,
       ...waypoints.map(w => `${w.lng},${w.lat}`),
@@ -48,22 +73,14 @@ export async function fetchOsrmSafeCorridorRoute(
     const url = `https://router.project-osrm.org/route/v1/${profile}/${coordsStr}?overview=full&geometries=geojson&steps=false`;
 
     const resp = await fetch(url, { signal: AbortSignal.timeout(7000) });
-    if (!resp.ok) {
-      // Fallback to direct route if waypoint route fails
-      const direct = await fetchOsrmRoute(originLat, originLng, destLat, destLng, { alternatives: false, profile });
-      return direct[0] ?? null;
-    }
+    if (!resp.ok) return direct;
 
     const data = await resp.json();
-    if (data.code !== 'Ok' || !data.routes?.length) {
-      const direct = await fetchOsrmRoute(originLat, originLng, destLat, destLng, { alternatives: false, profile });
-      return direct[0] ?? null;
-    }
+    if (data.code !== 'Ok' || !data.routes?.length) return direct;
 
     return parseRoute(data.routes[0]);
   } catch {
-    const direct = await fetchOsrmRoute(originLat, originLng, destLat, destLng, { alternatives: false, profile });
-    return direct[0] ?? null;
+    return direct;
   }
 }
 
