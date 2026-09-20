@@ -321,10 +321,6 @@ export default function App() {
   const score    = safeRoute ? Math.round(safeRoute.safetyScore) : null;
   const isSaved  = saved.some(s => s.originId === originPoint?.nearestNode.id && s.destinationId === destPoint?.nearestNode.id);
   const realDist = safeOsrm?.distanceKm ?? safeRoute?.totalDistanceKm;
-  // Tiempo real: si está a pie usa ritmo de caminata; si está en auto usa duración vehicular
-  const realTime = walkingMode
-    ? (walkMin ?? safeOsrm?.walkingMinutes ?? (safeRoute ? Math.max(1, Math.round((safeRoute.totalDistanceKm / 5) * 60)) : null))
-    : (safeOsrm ? safeOsrm.durationMinutes : (safeRoute ? safeRoute.estimatedTimeMinutes : null));
 
   // ── Walking mode derived stats ────────────────────────────────
   const walkDist   = realDist ?? 0;
@@ -336,6 +332,11 @@ export default function App() {
     d.setMinutes(d.getMinutes() + walkMin);
     return d.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
   })() : null;
+
+  // Tiempo real: si está a pie usa ritmo de caminata; si está en auto usa duración vehicular
+  const realTime = walkingMode
+    ? (walkMin ?? safeOsrm?.walkingMinutes ?? (safeRoute ? Math.max(1, Math.round((safeRoute.totalDistanceKm / 5) * 60)) : null))
+    : (safeOsrm ? safeOsrm.durationMinutes : (safeRoute ? safeRoute.estimatedTimeMinutes : null));
 
   return (
     <div className="ls-app">
