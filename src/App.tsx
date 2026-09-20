@@ -209,8 +209,7 @@ export default function App() {
       originPoint.lat, originPoint.lng,
       destPoint.lat,   destPoint.lng,
       corridorWaypoints,
-      profile,
-      { hotspots, incidents }
+      profile
     );
 
     if (!safeOsrmRoute) {
@@ -322,12 +321,10 @@ export default function App() {
   const score    = safeRoute ? Math.round(safeRoute.safetyScore) : null;
   const isSaved  = saved.some(s => s.originId === originPoint?.nearestNode.id && s.destinationId === destPoint?.nearestNode.id);
   const realDist = safeOsrm?.distanceKm ?? safeRoute?.totalDistanceKm;
-  // Tiempo a pie real (5 km/h). Si OSRM falla, estimar desde distancia del grafo.
-  const realTime = safeOsrm
-    ? safeOsrm.walkingMinutes
-    : safeRoute
-    ? Math.max(1, Math.round((safeRoute.totalDistanceKm / 5) * 60))
-    : null;
+  // Tiempo real: si está a pie usa ritmo de caminata; si está en auto usa duración vehicular
+  const realTime = walkingMode
+    ? (walkMin ?? safeOsrm?.walkingMinutes ?? (safeRoute ? Math.max(1, Math.round((safeRoute.totalDistanceKm / 5) * 60)) : null))
+    : (safeOsrm ? safeOsrm.durationMinutes : (safeRoute ? safeRoute.estimatedTimeMinutes : null));
 
   // ── Walking mode derived stats ────────────────────────────────
   const walkDist   = realDist ?? 0;
@@ -628,7 +625,7 @@ export default function App() {
                       </div>
                       <div className="ls-stat">
                         <Clock size={13} />
-                        <span><strong>{realTime ?? '—'} min</strong> estimado</span>
+                        <span><strong>{realTime ?? '—'} min</strong> estimado {walkingMode ? '(a pie)' : '(en auto)'}</span>
                       </div>
                       {stdRoute && stdRoute.safetyScore < safeRoute.safetyScore && (
                         <div className="ls-stat good">
@@ -654,19 +651,25 @@ export default function App() {
                       <div className="ls-comparison-grid">
                         <div className="ls-comp-col safe">
                           <div className="ls-comp-badge">🛡️ Ruta Segura (A*)</div>
-                          <div className="ls-comp-val">{realDist?.toFixed(1)} km · {realTime} min</div>
+                          <div className="ls-comp-val">{realDist?.toFixed(1)} km · {realTime} min {walkingMode ? '(a pie)' : '(en auto)'}</div>
                           <div className="ls-comp-sub" style={{ color: '#2DD4A0', fontWeight: 700 }}>
                             {Math.round(safeRoute.safetyScore)}% de Seguridad
                           </div>
                           <div className="ls-comp-desc">
-                            Desvía zonas rojas, confluencias peatonales e incidentes delictivos activos.
+                            {walkingMode
+                              ? 'Evita vías rápidas peligrosas, aglomeraciones críticas y zonas delictivas.'
+                              : 'Desvía zonas rojas, confluencias peatonales e incidentes delictivos activos.'}
                           </div>
                         </div>
 
                         <div className="ls-comp-col direct">
                           <div className="ls-comp-badge direct">⚠️ Ruta Directa Convencional</div>
                           <div className="ls-comp-val">
-                            {(stdOsrm ? stdOsrm.distanceKm : stdRoute.totalDistanceKm).toFixed(1)} km · {stdOsrm ? (walkingMode ? stdOsrm.walkingMinutes : Math.round(stdOsrm.distanceKm * 2.5)) : stdRoute.estimatedTimeMinutes} min
+                            {(stdOsrm ? stdOsrm.distanceKm : stdRoute.totalDistanceKm).toFixed(1)} km · {
+                              stdOsrm
+                                ? (walkingMode ? stdOsrm.walkingMinutes : stdOsrm.durationMinutes)
+                                : stdRoute.estimatedTimeMinutes
+                            } min {walkingMode ? '(a pie)' : '(en auto)'}
                           </div>
                           <div className="ls-comp-sub" style={{ color: stdRoute.safetyScore < 70 ? '#f43f5e' : '#e2e8f0', fontWeight: 700 }}>
                             {Math.round(stdRoute.safetyScore)}% de Seguridad

@@ -115,41 +115,40 @@ Un error fatal en aplicaciones urbanas es asumir que un auto y un peatón se com
 
 | Criterio | Modo Vehicular (Auto / Taxi) | Modo a Pie (Caminata Peatonal) |
 | :--- | :--- | :--- |
-| **Vías Rápidas / Expresas** | Transitables y preferidas (`via_expresa`, `via_rapida`) | **Prohibidas:** Penalización del 1500% en el grafo (las evita completamente) |
-| **Sensibilidad a Aglomeración** | Moderada ($1.0\times$): el conductor está dentro del auto | **Extrema ($2.8\times$):** El peatón está físicamente expuesto al arrebato y al tumulto |
-| **Preferencia de Calles** | Avenidas anchas de alta capacidad vehicular | Jirones peatonales, veredas, parques y calles tranquilas (bonificación del 15%) |
-| **Perfil OSRM** | `profile: 'driving'` (respeta sentidos de tránsito y autopistas) | `profile: 'walking'` (rutas peatonales, veredas, cruces peatonales) |
-| **Métricas Ergonómicas** | Velocidad promedio de tráfico y distancia vehicular | Pasos estimados (1,300 pasos/km), calorías (65 kcal/km) y ritmo regulable |
+| **Vías Rápidas / Expresas** | Transitables y preferidas (`via_expresa`, `via_rapida`, bonificación $0.85\times$) | **Prohibidas:** Penalización del $2500\%$ ($25\times$) en el grafo (evita completamente el Zanjón, Evitamiento y Panamericanas) |
+| **Pasajes y Zonas Peatonales** | **Prohibidas:** Penalización del $2500\%$ ($25\times$) para vehículos | **Priorizadas:** Bonificación del $0.75\times$ (favorece jirones seguros, bulevares y parques) |
+| **Sensibilidad a Aglomeración** | Moderada ($1.0\times$): el conductor está protegido dentro de la cabina | **Extrema ($2.8\times$):** El peatón está físicamente expuesto al arrebato y al tumulto |
+| **Perfil OSRM de Calles** | `profile: 'driving'` (respeta sentidos únicos, giros y vías expresas) | `profile: 'walking'` (rutas peatonales, veredas, puentes peatonales y accesos bidireccionales) |
+| **Velocidad y Tiempo Estimado** | Promedio de tráfico urbano en Lima: **22 km/h (~2.7 min/km)** con duración real OSRM | Ritmo fisiológico peatonal regulable: **3.5, 5.0 o 7.0 km/h** |
+| **Métricas Ergonómicas** | Duración vehicular real en tráfico | Pasos estimados (1,300 pasos/km), calorías quemadas (65 kcal/km) y hora exacta de llegada |
 
 ### Ritmos de Caminata Configurables
-- 🚶 **Tranquilo (3.5 km/h):** Para adultos mayores, personas con niños o paso pausado.
-- 🚶‍♂️ **Normal (5.0 km/h):** Velocidad media estándar de un transeúnte urbano.
-- 🏃 **Rápido (7.0 km/h):** Paso acelerado o trote ligero para traslados con prisa.
+- 🚶 **Tranquilo (3.5 km/h):** Para personas mayores, familias con niños pequeños o caminatas con carga pesada.
+- 🚶‍♂️ **Normal (5.0 km/h):** Velocidad media estándar de un transeúnte en aceras de Lima Metropolitana.
+- 🏃 **Rápido (7.0 km/h):** Paso acelerado o marcha rápida para traslados con urgencia.
 
 ---
 
 ## 🗺️ Cobertura Geográfica y Contexto Peruano
 
-El grafo y la base de incidentes de LimaSegura incorporan la realidad topográfica y social de Lima Metropolitana:
+El grafo, los hotspots de aglomeración y la base de incidentes de LimaSegura incorporan la realidad topográfica y social de los 43 distritos de Lima Metropolitana:
 
-### Zonas Críticas y Hotspots Modelados
-1. **Emporio Comercial Gamarra (La Victoria):**  
-   Mayor centro textil de Sudamérica. Alta aglomeración diurna (factor 95%), pasajes saturados de transeúntes y carterismo en accesos a Jr. Gamarra y Av. Aviación.
-2. **Mesa Redonda & Mercado Central (Cercado de Lima):**  
-   Foco comercial masivo de alta densidad. Pasajes estrechos, carretillas, congestión crítica y alto índice de hurtos al paso.
-3. **Callao Centro & Puerto del Callao (Callao):**  
-   Zona histórica con zonas rojas adyacentes a Jr. Constitución, Av. Sáenz Peña y Bellavista, con presencia documentada de microtráfico y asaltos.
-4. **Puente Nuevo / El Agustino / Evitamiento:**  
-   Garganta de conexión Lima Este con Cercado. Arrebatos de celulares en paraderos y escaleras de acceso a la autopista.
-5. **Caquetá, Habich y Zarumilla (Rímac / SMP):**  
-   Paraderos de transporte público de alta congestión norteña con incidencia frecuente de robos en horas pico.
-6. **Estaciones Críticas de Metro Línea 1 y Metropolitano:**  
-   Estación Gamarra, La Cultura, Central, Naranjal, Atocongo y Caja de Agua.
-7. **Óvalo Santa Anita / Carretera Central (Ate / Santa Anita):**  
-   Punto neurálgico de comercio ambulatorio masivo, transporte interprovincial y saturación peatonal.
+### Catálogo de Focos de Aglomeración Crítica (35+ Hotspots)
+- **Centro de Lima & Barrios Altos:** Mesa Redonda, Mercado Central, Jr. de la Unión, Plaza San Martín, Av. Abancay con Jr. Cuzco, Estación Central, Plaza Dos de Mayo y Cinco Esquinas (Barrios Altos).
+- **La Victoria:** Emporio Comercial Gamarra, La Parada / Mercado Mayorista, Cerro San Cosme, Cerro El Pino y Terminales de 28 de Julio.
+- **Lima Norte:** Caquetá con Av. Zarumilla (Rímac/SMP), Terminal Terrestre Fiori / Plaza Norte, MegaPlaza, Estación Naranjal, Mercado Unicachi (Comas/Pro) y Óvalo Habich (UNI).
+- **Lima Este:** Paradero Puente Nuevo (Evitamiento / El Agustino), Ceres Medio (Carretera Central - Ate), Estación Bayóvar / San Carlos (SJL), Paradero 10 de Canto Grande y Mercado de Productores Santa Anita.
+- **Lima Sur:** Puente Alipio Ponce (Panamericana Sur - SJM), Mercado Ciudad de Dios (SJM), Estación Atocongo Línea 1, Curva de Chorrillos y Óvalo Las Palomas (Villa El Salvador).
+- **Callao & Conexión Oeste:** Los Barracones / Jr. Loreto, Mercado Central del Callao, Cruce Morales Duárez con Faucett, Plaza Grau Callao y Plaza San Miguel.
+- **Lima Moderna / Corredores Financieros:** Estación Javier Prado (Vía Expresa), Estación La Cultura (San Borja), Óvalo Higuereta (Surco), Estación Angamos (Surquillo) y Jr. Risso con Av. Arequipa (Lince).
+
+### Base de Incidentes Activos y Zonas Peligrosas PNP (25+ Incidentes)
+- **Zonas Rojas de Alto Riesgo:** Los Barracones (Callao), Cinco Esquinas (Barrios Altos), Caquetá (modalidad "bujiazo"), Cerro San Cosme (La Victoria), Puente Alipio Ponce (cogoteros) y Fiori (paraderos informales).
+- **Obras Viales Críticas:** Desvíos por construcción de la Línea 2 del Metro en Av. Arica (Breña) y Carretera Central (Ate Ceres).
+- **Congestión y Eventos Masivos:** Cuello de botella en Javier Prado Este hacia La Molina, paraderos del Metropolitano y marchas en Av. Abancay frente al Congreso.
 
 ### Red de Refugios Seguros (Safe Havens)
-La aplicación cuenta con marcadores y contactos de emergencia directos para:
+La aplicación cuenta con geolocalización y teléfonos de contacto directo para:
 - **Hospitales de Referencia:** Hospital Edgardo Rebagliati (Jesús María), Hospital Arzobispo Loayza (Cercado), Hospital Casimiro Ulloa (Miraflores).
 - **Comisarías PNP:** Alfonso Ugarte, Miraflores, San Isidro, Callao.
 - **Compañías de Bomberos:** Cía. Roma N° 2 (Cercado), Bomberos Miraflores N° 28.

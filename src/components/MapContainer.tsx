@@ -287,10 +287,9 @@ export const MapContainer: React.FC<Props> = ({
     // Detectar si la ruta directa y la protegida coinciden porque el sector ya es 100% seguro
     const isOverlap = Boolean(
       directCoords && directCoords.length > 1 && safeCoords.length > 1 &&
-      (
-        (standardRoute && safeRoute && Math.abs(standardRoute.totalDistanceKm - safeRoute.totalDistanceKm) < 0.1 && standardRoute.safetyScore === safeRoute.safetyScore) ||
-        (directCoords.length === safeCoords.length && Math.abs(directCoords[0][0] - safeCoords[0][0]) < 0.001)
-      )
+      standardRoute && safeRoute &&
+      Math.abs(standardRoute.totalDistanceKm - safeRoute.totalDistanceKm) < 0.08 &&
+      Math.abs(standardRoute.safetyScore - safeRoute.safetyScore) <= 1
     );
     setRoutesOverlap(isOverlap);
 

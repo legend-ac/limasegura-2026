@@ -313,10 +313,22 @@ export function solveRoute(
       // Base edge cost is real distance in km
       let edgeWeight = neighbor.distanceKm;
 
-      // Penalización estricta de vías no caminables en modo peatonal
-      // Vías expresas y rápidas (Paseo de la República, Evitamiento, Panamericana) son prohibidas/peligrosas para peatones
-      if (walkingMode && (neighbor.edgeType === 'via_rapida' || neighbor.edgeType === 'via_expresa' || neighbor.edgeType === 'autopista')) {
-        edgeWeight *= 15.0; // 1500% de penalización → el algoritmo buscará cualquier vía transitable a pie
+      if (walkingMode) {
+        // Penalización estricta de vías rápidas no caminables para peatones
+        if (neighbor.edgeType === 'via_rapida' || neighbor.edgeType === 'via_expresa' || neighbor.edgeType === 'autopista') {
+          edgeWeight *= 25.0; // 2500% de penalización → prohíbe vías expresas para caminata
+        } else if (neighbor.edgeType === 'peatonal' || neighbor.edgeType === 'jiron' || neighbor.edgeType === 'calle') {
+          edgeWeight *= 0.75; // Bonificación para vías peatonales, jirones y calles tranquilas
+        } else if (neighbor.edgeType === 'avenida') {
+          edgeWeight *= 1.25; // Avenidas vehiculares con congestión son menos cómodas a pie
+        }
+      } else {
+        // En modo vehicular (auto / taxi):
+        if (neighbor.edgeType === 'peatonal') {
+          edgeWeight *= 25.0; // Prohibido para autos transitar por pasajes o calles 100% peatonales
+        } else if (neighbor.edgeType === 'via_expresa' || neighbor.edgeType === 'via_rapida') {
+          edgeWeight *= 0.85; // Prioriza vías de alta capacidad vehicular
+        }
       }
 
       // In safe mode, we penalize paths traversing inside the crowd radius or near risk incidents
@@ -333,18 +345,8 @@ export function solveRoute(
           incidents
         );
 
-        // En modo peatonal:
-        // 1. Mayor sensibilidad a aglomeraciones y robos (un peatón no tiene blindaje ni velocidad de auto)
-        // 2. Bonificación para jirones, calles y pasajes peatonales más tranquilos
+        // En modo peatonal: mayor sensibilidad a aglomeraciones y robos
         const pedestrianMultiplier = walkingMode ? 2.8 : 1.0;
-
-        if (walkingMode) {
-          if (neighbor.edgeType === 'peatonal' || neighbor.edgeType === 'jiron' || neighbor.edgeType === 'calle') {
-            edgeWeight *= 0.85; // Favorece vías peatonales seguras
-          } else if (neighbor.edgeType === 'avenida') {
-            edgeWeight *= 1.20; // Avenidas de alto tráfico vehicular son menos cómodas a pie
-          }
-        }
 
         // Multi-criteria cost function: distance amplified by crowd penalty factor
         const crowdMultiplier = 1
@@ -424,10 +426,19 @@ export function solveRoute(
   const safetyScore = Math.max(15, Math.min(99, Math.round(100 - safetyPenalty)));
   const crowdExposureScore = Math.min(100, Math.round(avgCrowdPenalty * 28));
 
-  // Time estimate: average 4.8 km/h walking or mixed safe urban transit with crowd slowdown
-  const baseWalkingHours = totalKm / 4.8;
-  const crowdDelayMultiplier = 1 + (crowdExposureScore / 100) * 0.45;
-  const estimatedTimeMinutes = Math.max(3, Math.round(baseWalkingHours * 60 * crowdDelayMultiplier));
+  // Time estimate:
+  let estimatedTimeMinutes: number;
+  if (walkingMode) {
+    // Velocidad peatonal: promedio 5.0 km/h (12 min/km)
+    const baseWalkingHours = totalKm / 5.0;
+    const crowdDelayMultiplier = 1 + (crowdExposureScore / 100) * 0.35;
+    estimatedTimeMinutes = Math.max(2, Math.round(baseWalkingHours * 60 * crowdDelayMultiplier));
+  } else {
+    // Velocidad vehicular urbana en Lima: promedio 22 km/h (~2.7 min/km)
+    const baseDrivingHours = totalKm / 22.0;
+    const trafficMultiplier = 1 + (crowdExposureScore / 100) * 0.55;
+    estimatedTimeMinutes = Math.max(2, Math.round(baseDrivingHours * 60 * trafficMultiplier));
+  }
 
   // Step by step directions
   const stepByStepDirections = segments.map((seg) => {
@@ -442,8 +453,9 @@ export function solveRoute(
       warning = `Zona de aglomeración activa (${crowdCheck.nearestHotspotName || 'Alta densidad'})`;
     }
 
+    const verb = walkingMode ? 'Caminar por' : 'Avanzar por';
     return {
-      instruction: `Continuar por ${seg.street} hacia ${toNode.name}`,
+      instruction: `${verb} ${seg.street} hacia ${toNode.name}`,
       distanceMeters: Math.round(seg.dist * 1000),
       nodeName: toNode.name,
       streetName: seg.street,
