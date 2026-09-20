@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import { GraphNode, GraphEdge, CrowdHotspot, RiskIncident, RouteResult } from '../types';
 import { findNearestNode, calculateDistanceMeters } from '../utils/algorithms';
