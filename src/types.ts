@@ -11,7 +11,7 @@ export interface GraphNode {
   lat: number;
   lng: number;
   district: string;
-  category: 'transit' | 'plaza' | 'avenue' | 'commercial' | 'landmark' | 'emergency';
+  category: 'transit' | 'plaza' | 'avenue' | 'commercial' | 'landmark' | 'emergency' | 'calle';
 }
 
 export interface GraphEdge {
